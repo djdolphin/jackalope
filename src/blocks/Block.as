@@ -296,6 +296,7 @@ public class Block extends Sprite {
 			labelsAndArgs.push(o);
 			var argType:String = 'icon';
 			if (o is BlockArg) argType = specParts[i];
+			if (o is BlockCheckbox) argType = '%B';
 			if (o is TextField) argType = 'label';
 			argTypes.push(argType);
 		}
@@ -409,7 +410,9 @@ public class Block extends Sprite {
 			if ('_mouse_' == v) argLabel = Translator.map('mouse-pointer');
 			if ('_myself_' == v) argLabel = Translator.map('myself');
 			if ('_stage_' == v) argLabel = Translator.map('Stage');
+			if ('_all sprites_' == v) argLabel = Translator.map('all sprites');
 			if (args[i] is BlockArg) args[i].setArgValue(v, argLabel);
+			else if (args[i] is BlockCheckbox) args[i].setOn(v);
 		}
 		defaultArgValues = defaults;
 	}
@@ -428,8 +431,8 @@ public class Block extends Sprite {
 				addChild(newArg);
 			}
 		} else {
-			if (oldArg is BlockCheckbox) BlockCheckbox(oldArg).setOn(newArg);
-			else BlockArg(oldArg).setArgValue(newArg);
+			if (oldArg is BlockArg) BlockArg(oldArg).setArgValue(newArg);
+			else if (oldArg is BlockCheckbox) BlockCheckbox(oldArg).setOn(newArg);
 		}
 	}
 
@@ -582,6 +585,10 @@ public class Block extends Sprite {
 				var arg:BlockArg = argToCopy;
 				BlockArg(args[i]).setArgValue(arg.argValue, arg.labelOrNull());
 			}
+			if (argToCopy is BlockCheckbox) {
+				var checkbox:BlockCheckbox = argToCopy
+				BlockCheckbox(args[i]).setOn(checkbox.isOn());
+			}
 			if (argToCopy is Block) {
 				var newArg:Block = Block(argToCopy).duplicate(false);
 				var oldArg:* = args[i];
@@ -603,6 +610,10 @@ public class Block extends Sprite {
 				a.argValue = argToCopy.argValue;
 				args.push(a);
 			}
+			if (argToCopy is BlockCheckbox) {
+				var checkbox:BlockCheckbox = argToCopy
+				BlockCheckbox(args[i]).setOn(checkbox.isOn());
+			}
 			if (argToCopy is Block) {
 				args.push(Block(argToCopy).duplicate(true));
 			}
@@ -615,7 +626,7 @@ public class Block extends Sprite {
 		args = [];
 		for (i = 0; i < labelsAndArgs.length; i++) {
 			var a:* = labelsAndArgs[i];
-			if ((a is Block) || (a is BlockArg)) args.push(a);
+			if ((a is Block) || (a is BlockArg) || (a is BlockCheckbox)) args.push(a);
 		}
 	}
 
