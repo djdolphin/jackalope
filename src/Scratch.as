@@ -204,7 +204,7 @@ public class Scratch extends Sprite {
 	public function tipsWidth():int { return 0; }
 
 	protected function startInEditMode():Boolean {
-		return isOffline;
+		return true;
 	}
 
 	public function getMediaLibrary(type:String, whenDone:Function):MediaLibrary {
