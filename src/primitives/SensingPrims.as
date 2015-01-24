@@ -400,9 +400,9 @@ public class SensingPrims {
 	}
 
 	private function primSetName(b:Block):void {
-		var s:ScratchSprite = interp.targetSprite();
-		if ((s == null) || (s.parent == null) || s.isClone) return;
-		s.objName = interp.arg(b, 0);
+		var s:ScratchSprite = interp.targetSprite(), name:String = interp.arg(b, 0);
+		if (s == null || s.isClone || s.objName == name) return;
+		s.objName = app.stagePane.unusedSpriteName(name);
 	}
 
 }}
