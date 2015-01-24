@@ -131,7 +131,7 @@ public class Interpreter {
 			var topBlock:Block = b;
 			if (b.isReporter) {
 				// click on reporter shows value in bubble
-				if (bubbleThread) {
+				if (bubbleThread && threads.indexOf(bubbleThread) > -1) {
 					toggleThread(bubbleThread.topBlock, bubbleThread.target);
 				}
 				var reporter:Block = b;
@@ -139,7 +139,7 @@ public class Interpreter {
 				b = new Block("%s", "", -1);
 				b.opFunction = function(b:Block):void {
 					var p:Point = reporter.localToGlobal(new Point(0, 0));
-					app.showBubble(String(interp.arg(b, 0)), p.x, p.y, reporter.getRect(app.stage).width);
+					app.showBubble(interp.arg(b, 0), p.x, p.y, reporter.getRect(app.stage).width);
 				};
 				b.args[0] = reporter;
 			}
@@ -341,23 +341,26 @@ public class Interpreter {
 	public function arg(b:Block, i:int):* {
 		var args:Array = b.args;
 		if (b.rightToLeft) { i = args.length - i - 1; }
-		return (b.args[i] is BlockArg) ?
-			BlockArg(args[i]).argValue : evalCmd(Block(args[i]));
+		return (args[i] is BlockArg) ?
+			BlockArg(args[i]).argValue : (args[i] is BlockCheckbox) ?
+			BlockCheckbox(args[i]).isOn() : evalCmd(Block(args[i]));
 	}
 
 	public function numarg(b:Block, i:int):Number {
 		var args:Array = b.args;
 		if (b.rightToLeft) { i = args.length - i - 1; }
-		var n:Number = (args[i] is BlockArg) ?
-			Number(BlockArg(args[i]).argValue) : Number(evalCmd(Block(args[i])));
-
+		var n:Number = (args[i] is BlockArg) ? 
+			Number(BlockArg(args[i]).argValue) : (args[i] is BlockCheckbox) ?
+			Number(BlockCheckbox(args[i]).isOn()) : Number(evalCmd(Block(args[i])));
 		if (n != n) return 0; // return 0 if NaN (uses fast, inline test for NaN)
 		return n;
 	}
 
 	public function boolarg(b:Block, i:int):Boolean {
 		if (b.rightToLeft) { i = b.args.length - i - 1; }
-		var o:* = (b.args[i] is BlockArg) ? BlockArg(b.args[i]).argValue : evalCmd(Block(b.args[i]));
+		var o:* = (b.args[i] is BlockArg) ?
+		BlockArg(b.args[i]).argValue : (b.args[i] is BlockCheckbox) ?
+		BlockCheckbox(b.args[i]).isOn() : evalCmd(Block(b.args[i]));
 		if (o is Boolean) return o;
 		if (o is String) {
 			var s:String = o;
@@ -366,6 +369,7 @@ public class Interpreter {
 		}
 		return Boolean(o); // coerce Number and anything else
 	}
+
 
 	public static function asNumber(n:*):Number {
 		// Convert n to a number if possible. If n is a string, it must contain
@@ -459,6 +463,8 @@ public class Interpreter {
 		primTable[Specs.GET_VAR]		= primVarGet;
 		primTable[Specs.SET_VAR]		= primVarSet;
 		primTable[Specs.CHANGE_VAR]		= primVarChange;
+		primTable["makeVariable"]		= primVarCreate;
+		primTable["deleteVariable"]		= primVarDelete;
 		primTable[Specs.GET_PARAM]		= primGetParam;
 
 		// edge-trigger hat blocks
@@ -557,6 +563,7 @@ public class Interpreter {
 		if (type == 'this script') primReturn(b);
 		if (type == 'other scripts in sprite') stopThreadsFor(activeThread.target, true);
 		if (type == 'other scripts in stage') stopThreadsFor(activeThread.target, true);
+		if (type == 'all and press green flag') { app.runtime.stopAll(); app.runtime.startGreenFlags(); }
 	}
 
 	private function primWait(b:Block):void {
@@ -707,6 +714,23 @@ public class Interpreter {
 		}
 		v.value = Number(v.value) + numarg(b, 1);
 		return v;
+	}
+
+	private function primVarCreate(b:Block):void {
+		var obj:ScratchObj = activeThread.target;
+		var varName:String = arg(b, 0);
+		if (obj.lookupVar(varName)) return;
+		var v:Variable = new Variable(varName, '');
+		obj.variables.push(v);
+		app.updatePalette();
+	}
+	
+	private function primVarDelete(b:Block):void {
+		var obj:ScratchObj = activeThread.target;
+		var varName:String = arg(b, 0);
+		if (!obj.lookupVar(varName)) return;
+		obj.deleteVar(varName);
+		app.updatePalette();
 	}
 
 	private function primGetParam(b:Block):* {

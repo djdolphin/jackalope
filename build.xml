@@ -17,7 +17,7 @@
 
 	<!-- Build for Flash Player 10.2 -->
 	<target name="test_10.2" depends="init">
-		<mxmlc file="${SRC_DIR}/Scratch.as" output="${DEPLOY_DIR}/ScratchFor10.2.swf"
+		<mxmlc file="${SRC_DIR}/Scratch.as" output="${DEPLOY_DIR}/JackalopeFor10.2.swf"
 		                target-player="10.2" swf-version="11" debug="false">
 			<source-path path-element="${SRC_DIR}" />
 			<library-path file="${LIBS_DIR}/blooddy_crypto.swc" />
@@ -30,7 +30,7 @@
 
 	<!-- Build and output Scratch.swf-->
 	<target name="compile" depends="test_10.2,init">
-		<mxmlc file="${SRC_DIR}/Scratch.as" output="${DEPLOY_DIR}/Scratch.swf"
+		<mxmlc file="${SRC_DIR}/Scratch.as" output="${DEPLOY_DIR}/Jackalope.swf"
 		                target-player="11.4" swf-version="17" debug="false">
 			<source-path path-element="${SRC_DIR}" />
 			<library-path file="${LIBS_DIR}/blooddy_crypto.swc" />

@@ -49,9 +49,12 @@ public class MotionAndPenPrims {
 		primTable["turnLeft:"]			= primTurnLeft;
 		primTable["heading:"]			= primSetDirection;
 		primTable["pointTowards:"]		= primPointTowards;
+		primTable["pointTowardsPoint"]	= primPointTowardsPoint;
 		primTable["gotoX:y:"]			= primGoTo;
 		primTable["gotoSpriteOrMouse:"]	= primGoToSpriteOrMouse;
 		primTable["glideSecs:toX:y:elapsed:from:"] = primGlide;
+
+		primTable["setDraggability"]	= primSetDraggability;
 
 		primTable["changeXposBy:"]		= primChangeX;
 		primTable["xpos:"]				= primSetX;
@@ -63,6 +66,7 @@ public class MotionAndPenPrims {
 		primTable["xpos"]				= primXPosition;
 		primTable["ypos"]				= primYPosition;
 		primTable["heading"]			= primDirection;
+		primTable["isDraggable"]		= primIsDraggable;
 
 		primTable["clearPenTrails"]		= primClear;
 		primTable["putPenDown"]			= primPenDown;
@@ -74,7 +78,20 @@ public class MotionAndPenPrims {
 		primTable["changePenShadeBy:"]	= primChangePenShade;
 		primTable["penSize:"]			= primSetPenSize;
 		primTable["changePenSizeBy:"]	= primChangePenSize;
+		primTable["setPenTransparency"]	= primSetPenTransparency;
+		primTable["changePenTransparency"] = primChangePenTransparency;
+		primTable["penIsDown"]			= primPenIsDown;
+		primTable["penColor"]			= primPenColor;
+		primTable["penHue"]				= primPenHue;
+		primTable["penShade"]			= primPenShade;
+		primTable["penSize"]			= primPenSize;
+		primTable["penTransparency"]	= primPenTransparency;
 		primTable["stampCostume"]		= primStamp;
+
+		primTable["drawRectangle"]		= primDrawRectangle;
+		primTable["drawCircle"]			= primDrawCircle;
+		primTable["drawEllipse"]		= primDrawEllipse;
+		primTable["drawRoundedRectangle"] = primDrawRoundedRectangle;
 	}
 
 	private function primMove(b:Block):void {
@@ -109,6 +126,16 @@ public class MotionAndPenPrims {
 		if ((s == null) || (p == null)) return;
 		var dx:Number = p.x - s.scratchX;
 		var dy:Number = p.y - s.scratchY;
+		var angle:Number = 90 - ((Math.atan2(dy, dx) * 180) / Math.PI);
+		s.setDirection(angle);
+		if (s.visible) interp.redraw();
+	}
+
+	private function primPointTowardsPoint(b:Block):void {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return;
+		var dx:Number = Math.round(interp.arg(b, 0)) - s.scratchX;
+		var dy:Number = Math.round(interp.arg(b, 1)) - s.scratchY;
 		var angle:Number = 90 - ((Math.atan2(dy, dx) * 180) / Math.PI);
 		s.setDirection(angle);
 		if (s.visible) interp.redraw();
@@ -212,6 +239,18 @@ public class MotionAndPenPrims {
 		return (s != null) ? snapToInteger(s.direction) : 0;
 	}
 
+	private function primSetDraggability(b:Block):void {
+		var s:ScratchSprite = interp.targetSprite();
+		var choice:String = interp.arg(b, 0);
+		if (s == null) return;
+		s.isDraggable = choice == "draggable" ? true : choice == "undraggable" ? false : s.isDraggable;
+	}	
+
+	private function primIsDraggable(b:Block):Boolean {
+		var s:ScratchSprite = interp.targetSprite();
+		return (s != null) ? s.isDraggable : false;
+	}
+
 	private function snapToInteger(n:Number):Number {
 		var rounded:Number = Math.round(n);
 		var delta:Number = n - rounded;
@@ -271,6 +310,52 @@ public class MotionAndPenPrims {
 		if (s != null) s.setPenSize(s.penWidth + interp.numarg(b, 0));
 	}
 
+	private function primSetPenTransparency(b:Block):void {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s != null) s.setPenTransparency(interp.numarg(b, 0));
+	}
+
+	private function primChangePenTransparency(b:Block):void {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s != null) s.setPenTransparency(s.penTransparency + interp.numarg(b, 0));
+	}
+
+	private function primPenIsDown(b:Block):Boolean {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return false;
+		return s.penIsDown;
+	}
+
+	private function primPenColor(b:Block):JackalopeColor {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return new JackalopeColor(0);
+		return new JackalopeColor(s.penColorCache);
+	}
+	
+	private function primPenHue(b:Block):Number {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return 0;
+		return s.penHue;
+	}
+	
+	private function primPenShade(b:Block):Number {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return 0;
+		return s.penShade;
+	}
+
+	private function primPenSize(b:Block):Number {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return 0;
+		return s.penWidth;
+	}
+
+	private function primPenTransparency(b:Block):Number {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return 0;
+		return s.penTransparency;
+	}
+
 	private function primStamp(b:Block):void {
 		var s:ScratchSprite = interp.targetSprite();
 		// In 3D mode, get the alpha from the ghost filter
@@ -280,6 +365,55 @@ public class MotionAndPenPrims {
 			s.img.transform.colorTransform.alphaMultiplier);
 
 		doStamp(s, alpha);
+	}
+
+	private function primDrawRectangle(b:Block):void {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return;
+		var g:Graphics = app.stagePane.newPenStrokes.graphics;
+		var startX:Number = 240 + interp.numarg(b, 0), startY:Number = 180 - interp.numarg(b, 1),
+			width:Number = interp.numarg(b, 2), height:Number = interp.numarg(b, 3);
+		g.beginFill(s.penColorCache, 1 - s.penTransparency / 100);
+		g.drawRect(startX, startY, width, height);
+		g.endFill();
+		app.stagePane.penActivity = true;
+	}
+
+	private function primDrawCircle(b:Block):void {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return;
+		var g:Graphics = app.stagePane.newPenStrokes.graphics;
+		var startX:Number = 240 + interp.numarg(b, 0), startY:Number = 180 - interp.numarg(b, 1),
+			radius:Number = interp.numarg(b, 2);
+		g.beginFill(s.penColorCache, 1 - s.penTransparency / 100);
+		g.drawCircle(startX, startY, radius);
+		g.endFill();
+		app.stagePane.penActivity = true;
+	}
+
+	private function primDrawEllipse(b:Block):void {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return;
+		var g:Graphics = app.stagePane.newPenStrokes.graphics;
+		var startX:Number = 240 + interp.numarg(b, 0), startY:Number = 180 - interp.numarg(b, 1),
+			width:Number = interp.numarg(b, 2), height:Number = interp.numarg(b, 3);
+		g.beginFill(s.penColorCache, 1 - s.penTransparency / 100);
+		g.drawEllipse(startX, startY, width, height);
+		g.endFill();
+		app.stagePane.penActivity = true;
+	}
+
+	private function primDrawRoundedRectangle(b:Block):void {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return;
+		var g:Graphics = app.stagePane.newPenStrokes.graphics;
+		var startX:Number = 240 + interp.numarg(b, 0), startY:Number = 180 - interp.numarg(b, 1),
+			width:Number = interp.numarg(b, 2), height:Number = interp.numarg(b, 3),
+			rounding:Number = interp.numarg(b, 4) * 2;
+		g.beginFill(s.penColorCache, 1 - s.penTransparency / 100);
+		g.drawRoundRect(startX, startY, width, height, rounding);
+		g.endFill();
+		app.stagePane.penActivity = true;
 	}
 
 	private function doStamp(s:ScratchSprite, stampAlpha:Number):void {
@@ -300,7 +434,7 @@ public class MotionAndPenPrims {
 
 	private function stroke(s:ScratchSprite, oldX:Number, oldY:Number, newX:Number, newY:Number):void {
 		var g:Graphics = app.stagePane.newPenStrokes.graphics;
-		g.lineStyle(s.penWidth, s.penColorCache);
+		g.lineStyle(s.penWidth, s.penColorCache, 1 - s.penTransparency / 100);
 		g.moveTo(240 + oldX, 180 - oldY);
 		g.lineTo(240 + newX, 180 - newY);
 //trace('pen line('+oldX+', '+oldY+', '+newX+', '+newY+')');

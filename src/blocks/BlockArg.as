@@ -66,7 +66,7 @@ public class BlockArg extends Sprite {
 	//	n - number (rounded)
 	//	s - string (rectangular)
 	//	none of the above - custom subclass of BlockArg
-	public function BlockArg(type:String, color:int, editable:Boolean = false, menuName:String = '') {
+	public function BlockArg(type:String, color:int, editable:Boolean = false, menuName:String = '', forProcedureEditor:Boolean = false) {
 		this.type = type;
 
 		if (color == -1) { // copy for clone; omit graphics
@@ -80,16 +80,16 @@ public class BlockArg extends Sprite {
 		} else if (type == 'c') {
 			base = new BlockShape(BlockShape.RectShape, c);
 			this.menuName = 'colorPicker';
-			addEventListener(MouseEvent.MOUSE_DOWN, invokeMenu);
+			if (!forProcedureEditor) addEventListener(MouseEvent.MOUSE_DOWN, invokeMenu);
 		} else if (type == 'd') {
 			base = new BlockShape(BlockShape.NumberShape, c);
 			isNumber = true;
 			this.menuName = menuName;
-			addEventListener(MouseEvent.MOUSE_DOWN, invokeMenu);
+			if (!forProcedureEditor) addEventListener(MouseEvent.MOUSE_DOWN, invokeMenu);
 		} else if (type == 'm') {
 			base = new BlockShape(BlockShape.RectShape, c);
 			this.menuName = menuName;
-			addEventListener(MouseEvent.MOUSE_DOWN, invokeMenu);
+			if (!forProcedureEditor) addEventListener(MouseEvent.MOUSE_DOWN, invokeMenu);
 		} else if (type == 'n') {
 			base = new BlockShape(BlockShape.NumberShape, c);
 			isNumber = true;
@@ -126,12 +126,12 @@ public class BlockArg extends Sprite {
 
 		if (editable || isNumber || (type == 'm')) { // add a string field
 			field = makeTextField();
-			if ((type == 'm') && !editable) field.textColor = 0xFFFFFF;
+			if ((type == 'm') && !forProcedureEditor) field.textColor = 0xFFFFFF;
 			else base.setWidthAndTopHeight(30, Block.argTextFormat.size + 5); // 14 for normal arg font
 			field.text = isNumber ? '10' : '';
-			if (isNumber) field.restrict = '0-9e.\\-'; // restrict to numeric characters
+			if (isNumber && !forProcedureEditor) field.restrict = '0-9a-fA-FxX.\\-'; // restrict to numeric characters
 			if (editable) {
-				base.setColor(0xFFFFFF); // if editable, set color to white
+				if (type != 'm' || (type == 'm' && forProcedureEditor)) base.setColor(0xFFFFFF); // if editable, set color to white
 				isEditable = true;
 			}
 			field.addEventListener(FocusEvent.FOCUS_OUT, stopEditing);
@@ -186,7 +186,7 @@ public class BlockArg extends Sprite {
 		field.selectable = false;
 	}
 
-	private function blockArgFilters():Array {
+	public static function blockArgFilters():Array {
 		// filters for BlockArg outlines
 		var f:BevelFilter = new BevelFilter(1);
 		f.blurX = f.blurY = 2;

@@ -49,6 +49,7 @@ public class ScratchRuntime {
 	public var keyIsDown:Array = new Array(128); // records key up/down state
 	public var shiftIsDown:Boolean;
 	public var lastAnswer:String = '';
+	public var askingInDialog:Boolean = false;
 	public var cloneCount:int;
 	public var edgeTriggersEnabled:Boolean = false; // initially false, becomes true when project first run
 
@@ -70,7 +71,7 @@ public class ScratchRuntime {
 	//------------------------------
 
 	public function stepRuntime():void {
-		if (projectToInstall != null && app.isOffline) {
+		if (projectToInstall != null) {
 			installProject(projectToInstall);
 			if (saveAfterInstall) app.setSaveNeeded(true);
 			projectToInstall = null;
@@ -150,6 +151,7 @@ public class ScratchRuntime {
 			s.hideBubble();
 		}
 		clearAskPrompts();
+		clearScriptMadeDialogs();
 		app.removeLoadProgressBox();
 		motionDetector = null;
 	}
@@ -369,9 +371,10 @@ public class ScratchRuntime {
 			installProjectFromFile(fileName, data);
 		}
 		stopAll();
-		var filter1:FileFilter = new FileFilter('Scratch 1.4 Project', '*.sb');
-		var filter2:FileFilter = new FileFilter('Scratch 2 Project', '*.sb2');
-		Scratch.loadSingleFile(fileLoadHandler, [filter1, filter2])
+		var filter1:FileFilter = new FileFilter('Jackalope Project', '*.jk');
+		var filter2:FileFilter = new FileFilter('Scratch 1.4 Project', '*.sb');
+		var filter3:FileFilter = new FileFilter('Scratch 2 Project', '*.sb2');
+		Scratch.loadSingleFile(fileLoadHandler, [filter1, filter2, filter3])
 	}
 
 	public function installProjectFromFile(fileName:String, data:ByteArray):void {
@@ -503,6 +506,29 @@ public class ScratchRuntime {
 		for each (c in allPrompts) uiLayer.removeChild(c);
 	}
 
+	public function showAskDialog(question:String = '', defaultAnswer:String = ''):void {
+		askingInDialog = true;
+		interp.askThread = interp.activeThread;
+		uiwidgets.DialogBox.ask(question, defaultAnswer, app.stage, handleDialogAnswer, null, true);
+	}
+
+	private function handleDialogAnswer(answer:String):void {
+		lastAnswer = answer;
+		interp.askThread = null;
+		askingInDialog = false;
+	}
+
+	public function clearScriptMadeDialogs():void {
+		askingInDialog = false;
+		var dialogs:Array = [];
+		var o:DisplayObject;
+		for (var i:int = 0; i < app.stage.numChildren; i++) {
+			o = app.stage.getChildAt(i);
+			if (o is DialogBox && DialogBox(o).createdByScript) dialogs.push(DialogBox(o));
+		}
+		for each (var d:DialogBox in dialogs) d.remove();
+	}
+
 	// -----------------------------
 	// Keyboard input handling
 	//------------------------------
@@ -631,6 +657,14 @@ public class ScratchRuntime {
 				b.args[0].setArgValue(newName);
 			}
 		}
+	}
+
+	public function convertVarValue(value:*):* {
+		if (getQualifiedClassName(value) == 'Object') {
+			if (value.type == 'JackalopeColor') return new JackalopeColor(value.color);
+			if (value.type == 'RegExp') return new RegExp(value.source, value.flags);
+		}
+		return value;
 	}
 
 	// -----------------------------
@@ -924,7 +958,7 @@ public class ScratchRuntime {
 		app.updatePalette(false);
 	}
 
-	private function showOnStage(w:DisplayObject):void {
+	public function showOnStage(w:DisplayObject):void {
 		if (w.parent == null) setInitialPosition(w);
 		w.visible = true;
 		app.stagePane.addChild(w);
@@ -1017,7 +1051,7 @@ public class ScratchRuntime {
 		return v.watcher;
 	}
 
-	private function watcherForList(targetObj:ScratchObj, listName:String):DisplayObject {
+	public function watcherForList(targetObj:ScratchObj, listName:String):DisplayObject {
 		var w:ListWatcher;
 		for each (w in targetObj.lists) {
 			if (w.listName == listName) return w;
@@ -1028,7 +1062,7 @@ public class ScratchRuntime {
 		return null;
 	}
 
-	private function existingWatcherForVar(target:ScratchObj, vName:String):Watcher {
+	public function existingWatcherForVar(target:ScratchObj, vName:String):Watcher {
 		var uiLayer:Sprite = app.stagePane.getUILayer();
 		for (var i:int = 0; i < uiLayer.numChildren; i++) {
 			var c:* = uiLayer.getChildAt(i);

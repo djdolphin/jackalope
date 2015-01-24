@@ -25,6 +25,17 @@
 package util {
 public class Color {
 
+	public static function combineRGB(r:Number, g:Number, b:Number):int {
+		return (r << 16) | (g << 8) | b;
+	}
+
+	public static function separateRGB(rgb:Number):Array {
+		var r:Number = (rgb >> 16) & 255;
+		var g:Number = (rgb >> 8) & 255;
+		var b:Number = rgb & 255;
+		return [r, g, b];
+	}
+
 	// Convert hue (0-360), saturation (0-1), and brightness (0-1) to RGB.
 	public static function fromHSV(h:Number, s:Number, v:Number):int {
 		var r:Number, g:Number, b:Number;

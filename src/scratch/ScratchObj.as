@@ -324,7 +324,7 @@ public class ScratchObj extends Sprite {
 		if ((['playSound:', 'doPlaySoundAndWait'].indexOf(op)) > -1) {
 			return (sounds.length > 0) ? [sounds[sounds.length - 1].soundName] : [''];
 		}
-		if ('createCloneOf' == op) {
+		if (['createCloneOf', 'deleteClonesOf'].indexOf(op) > -1) {
 			if (!isStage) return ['_myself_'];
 			sprites = Scratch.app.stagePane.sprites();
 			return (sprites.length > 0) ? [sprites[sprites.length - 1].objName] : [''];
@@ -338,6 +338,9 @@ public class ScratchObj extends Sprite {
 		if ('changeVar:by:' == op) return [defaultVarName(), 1];
 		if ('showVariable:' == op) return [defaultVarName()];
 		if ('hideVariable:' == op) return [defaultVarName()];
+		if ('moveVariable' == op) return [defaultVarName(), 10, 10];
+		if ('setVariableStyle' == op) return [defaultVarName(), 'normal'];
+		if ('setVariableColor' == op) return [defaultVarName(), Color.random()];
 
 		if ('append:toList:' == op) return ['thing', defaultListName()];
 		if ('deleteLine:ofList:' == op) return [1, defaultListName()];
@@ -346,20 +349,24 @@ public class ScratchObj extends Sprite {
 		if ('getLine:ofList:' == op) return [1, defaultListName()];
 		if ('lineCountOfList:' == op) return [defaultListName()];
 		if ('list:contains:' == op) return [defaultListName(), 'thing'];
+		if ('listIndexOf' == op) return ['thing', defaultListName(), 1];
 		if ('showList:' == op) return [defaultListName()];
 		if ('hideList:' == op) return [defaultListName()];
+		if ('moveList' == op) return [defaultListName(), 10, 10];
+
+		if ('mixColorsWithRatio' == op) return [Color.random(), 1, 1, Color.random()];
 
 		return specDefaults;
 	}
 
 	public function defaultVarName():String {
 		if (variables.length > 0) return variables[variables.length - 1].name; // local var
-		return isStage ? '' : Scratch.app.stagePane.defaultVarName(); // global var, if any
+		return isStage ? 'a variable' : Scratch.app.stagePane.defaultVarName(); // global var, if any
 	}
 
 	public function defaultListName():String {
 		if (lists.length > 0) return lists[lists.length - 1].listName; // local list
-		return isStage ? '' : Scratch.app.stagePane.defaultListName(); // global list, if any
+		return isStage ? 'a list' : Scratch.app.stagePane.defaultListName(); // global list, if any
 	}
 
 	/* Scripts */

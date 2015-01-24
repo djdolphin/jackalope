@@ -38,6 +38,12 @@ import flash.display.*;
 	import blocks.Block;
 	import translation.Translator;
 
+	//Added for Jackalope
+	import flash.events.Event;
+	import flash.geom.Matrix;
+	import flash.ui.Mouse;
+	import flash.ui.MouseCursor;
+
 public class Watcher extends Sprite implements DragClient {
 
 	private static const decimalPlaces:uint = 6;
@@ -76,7 +82,11 @@ public class Watcher extends Sprite implements DragClient {
 	private var isDiscrete:Boolean = true;
 	private var mouseMoved:Boolean;
 
+	private var app:Scratch;
+	private var dragMode:String = "none";
+
 	public function Watcher() {
+		app = Scratch.app;
 		frame = new ResizeableFrame(0x949191, 0xC1C4C7, 8);
 		addChild(frame);
 		addLabel();
@@ -178,6 +188,14 @@ public class Watcher extends Sprite implements DragClient {
 			setLabel(Translator.map(param));
 		else if (cmd == 'senseVideoMotion')
 			setLabel((target.isStage ? '' : target.objName + ': ') + Translator.map('video ' + param));
+		else if (cmd == 'graphicEffect')
+			setLabel(target.objName + ': ' + param + ' ' + Translator.map('effect'));
+		else if (cmd == 'stretch')
+			setLabel(target.objName + ': ' + param + ' ' + Translator.map('stretch'));
+		else if (cmd == 'totalCloneCount')
+			setLabel(Translator.map('total clone count'));
+		else if (cmd == 'cloneCount')
+			setLabel(target.objName + ': ' + Translator.map('clone count'));
 		else
 			setLabel((target.isStage ? '' : target.objName + ': ') + specForCmd());
 	}
@@ -206,7 +224,6 @@ public class Watcher extends Sprite implements DragClient {
 			var v:Variable = target.lookupVar(param);
 			return (v == null) ? "unknown var: " + param : v.value;
 		}
-		var app:Scratch = runtime.app;
 		if (cmd == "senseVideoMotion") {
 			var prim:Function = app.interp.getPrim(cmd);
 			if (prim == null) return 0;
@@ -216,10 +233,22 @@ public class Watcher extends Sprite implements DragClient {
 		if (target is ScratchSprite) {
 			switch(cmd) {
 				case "costumeIndex": return ScratchSprite(target).costumeNumber();
+				case "costumeName": return ScratchSprite(target).currentCostume().costumeName;
 				case "xpos": return ScratchSprite(target).scratchX;
 				case "ypos": return ScratchSprite(target).scratchY;
 				case "heading": return ScratchSprite(target).direction;
-				case "scale": return Math.round(ScratchSprite(target).getSize());
+				case "rotationStyle": return ScratchSprite(target).getRotationStyle();
+				case "isDraggable": return ScratchSprite(target).isDraggable;
+				case "scale": return Math.round(ScratchSprite(target).size);
+				case "stretch": return param == 'horizontal' ? ScratchSprite(target).hStretch : param == 'vertical' ? ScratchSprite(target).vStretch : "undefined";
+				case "isVisible": return ScratchSprite(target).visible;
+				case "penIsDown": return ScratchSprite(target).penIsDown;
+				case "penColor": return ScratchSprite(target).penColorCache;
+				case "penHue": return ScratchSprite(target).penHue;
+				case "penShade": return ScratchSprite(target).penShade;
+				case "penSize": return ScratchSprite(target).penWidth;
+				case "penTransparency": return ScratchSprite(target).penTransparency;
+				case "cloneCount": return ScratchSprite(target).cloneCount();
 			}
 		}
 		switch(cmd) {
@@ -236,6 +265,8 @@ public class Watcher extends Sprite implements DragClient {
 			case "timeAndDate": return runtime.getTimeString(param);
 			case "xScroll": return app.stagePane.xScroll;
 			case "yScroll": return app.stagePane.yScroll;
+			case "graphicEffect": return target.filterPack.getFilterSetting(param);
+			case "totalCloneCount": return app.runtime.cloneCount;
 		}
 
 		if(cmd.indexOf('.') > -1) {
@@ -356,15 +387,22 @@ public class Watcher extends Sprite implements DragClient {
 	/* Menu */
 
 	public function menu(evt:MouseEvent):Menu {
+		var watcher:Watcher = this;
 		function handleMenu(item:int):void {
 			if ((1 <= item) && (item <= 3)) setMode(item);
 			if (5 == item) sliderMinMaxDialog();
+			if (6 == item) {
+				dragMode = "pick color";
+				app.gh.setDragClient(watcher, evt);
+			}
+			if (7 == item) duplicateWatcher();
+			if (8 == item) deleteWatcher();
 			if (item == 10) {
 				visible = false;
-				Scratch.app.updatePalette(false);
+				app.updatePalette(false);
 			}
 		}
-		if (!Scratch.app.editMode) return null;
+		if (!app.editMode) return null;
 		var m:Menu = new Menu(handleMenu);
 		m.addItem("normal readout", 1);
 		m.addItem("large readout", 2);
@@ -376,6 +414,11 @@ public class Watcher extends Sprite implements DragClient {
 				m.addItem("set slider min and max", 5);
 			}
 		}
+		m.addLine();
+		m.addItem("change color", 6);
+		m.addLine();
+		m.addItem("duplicate", 7);
+		m.addItem("delete", 8);
 		m.addLine();
 		m.addItem("hide", 10);
 		return m;
@@ -402,28 +445,70 @@ public class Watcher extends Sprite implements DragClient {
 		d.showOnStage(stage);
 	}
 
+	private function duplicateWatcher():void {
+		var w:Watcher = new Watcher();
+		w.initWatcher(target, cmd, param, readout.getColor());
+		w.setMode(mode);
+		if (mode == SLIDER_MODE) w.setSliderMinMax(sliderMin, sliderMax, getValue(app.runtime));
+		app.runtime.showOnStage(w);
+	}
+	
+	private function deleteWatcher():void {
+		app.runtime.recordForUndelete(this, x, y, 0, app.stagePane);
+		parent.removeChild(this);
+		app.updatePalette();
+	}
+
 	/* Slider */
 
 	private function mouseDown(evt:MouseEvent):void {
 		if (mode != SLIDER_MODE) return;
 		var p:Point = globalToLocal(new Point(evt.stageX, evt.stageY));
-		if (p.y > 20) Scratch(root).gh.setDragClient(this, evt);
+		if (p.y > 20) {
+			dragMode = "move slider";
+			Scratch(root).gh.setDragClient(this, evt);
+		}
 	}
 
 	public function dragBegin(evt:MouseEvent):void {
-		mouseMoved = false;
+		if (dragMode == "move slider") mouseMoved = false;
 	}
 
 	public function dragMove(evt:MouseEvent):void {
-		var p:Point = globalToLocal(new Point(evt.stageX, evt.stageY));
-		var xOffset:Number = p.x - slider.x - 4;
-		setSliderValue(((xOffset / (slider.width - 10)) * (sliderMax - sliderMin)) + sliderMin);
-		mouseMoved = true;
+		if (dragMode == "move slider") {
+			var p:Point = globalToLocal(new Point(evt.stageX, evt.stageY));
+			var xOffset:Number = p.x - slider.x - 4;
+			setSliderValue(((xOffset / (slider.width - 10)) * (sliderMax - sliderMin)) + sliderMin);
+			mouseMoved = true;
+		} else if (dragMode == "pick color") {
+			if (pickingColor) {
+				setColor(pixelColorAt(evt.stageX, evt.stageY));
+			}
+		}
 	}
 
 	public function dragEnd(evt:MouseEvent):void {
-		var p:Point = globalToLocal(new Point(evt.stageX, evt.stageY));
-		if (!mouseMoved) clickAt(p.x);
+		if (dragMode == "move slider") {
+			var p:Point = globalToLocal(new Point(evt.stageX, evt.stageY));
+			if (!mouseMoved) clickAt(p.x);
+			dragMode = "none";
+		} else if (dragMode == "pick color") {
+			if (pickingColor) {
+				pickingColor = false;
+				Mouse.cursor = MouseCursor.AUTO;
+				app.stage.removeChild(colorPickerSprite);
+				app.stage.removeEventListener(Event.RESIZE, fixColorPickerLayout);
+				dragMode = "none";				
+			} else {
+				pickingColor = true;
+				app.gh.setDragClient(this, evt);
+				Mouse.cursor = MouseCursor.BUTTON;
+				app.stage.addEventListener(Event.RESIZE, fixColorPickerLayout);
+				app.stage.addChild(colorPickerSprite = new Sprite);
+				fixColorPickerLayout();
+				setColor(pixelColorAt(evt.stageX, evt.stageY));
+			}
+		}
 	}
 
 	private function clickAt(localX:Number):void {
@@ -466,6 +551,37 @@ public class Watcher extends Sprite implements DragClient {
 		x = obj.x;
 		y = obj.y;
 		visible = obj.visible;
+	}
+
+	// Color picker
+
+	private function fixColorPickerLayout(event:Event = null):void {
+		var g:Graphics = colorPickerSprite.graphics;
+		g.clear();
+		g.beginFill(0, 0);
+		g.drawRect(0, 0, app.stage.stageWidth, app.stage.stageHeight);
+	}
+
+	private var pickingColor:Boolean = false;
+	private var colorPickerSprite:Sprite;
+	private var onePixel:BitmapData = new BitmapData(1, 1);
+
+	private function pixelColorAt(x:int, y:int):int {
+		var m:Matrix = new Matrix();
+		m.translate(-x, -y);
+		onePixel.fillRect(onePixel.rect, 0);
+		if (app.isIn3D) app.stagePane.visible = true;
+		onePixel.draw(app, m);
+		if (app.isIn3D) app.stagePane.visible = false;
+		var x:int = onePixel.getPixel32(0, 0);
+		return x ? x | 0xFF000000 : 0xFFFFFFFF; // alpha is always 0xFF
+	}
+	
+	// Tool handler
+	
+	public function handleTool(tool:String, evt:MouseEvent):void {
+		if (tool == 'copy') duplicateWatcher();
+		if (tool == 'cut') deleteWatcher();
 	}
 
 }}

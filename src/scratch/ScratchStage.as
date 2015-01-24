@@ -194,6 +194,23 @@ public class ScratchStage extends ScratchObj {
 		for each (var c:ScratchSprite in clones) removeChild(c);
 	}
 
+	public function deleteClonesOf(sprite:ScratchSprite):void {
+		if (!sprite) return;
+		var clones:Array = [];
+		for (var i:int = 0; i < numChildren; i++) {
+			var o:* = getChildAt(i);
+			if ((o is ScratchSprite) && o.isClone && (o.objName == sprite.objName)) {
+				if (o.bubble && o.bubble.parent) o.bubble.parent.removeChild(o.bubble);
+				clones.push(o);
+			}
+		}
+		var app:Scratch = parent as Scratch;
+		for each (var c:ScratchSprite in clones) {
+			removeChild(c);
+			if (app != null) app.runtime.cloneCount--;
+		}
+	}
+
 	public function watchers():Array {
 		// Return an array of all variable and lists on the stage, visible or not.
 		var result:Array = [];

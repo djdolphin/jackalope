@@ -29,6 +29,7 @@
 package util {
 	import flash.display.BitmapData;
 	import flash.utils.*;
+	import scratch.JackalopeColor;
 
 public class JSON {
 
@@ -280,7 +281,19 @@ public class JSON {
 		else if (value == null) buf += "null";
 		else if (value is Array) writeArray(value);
 		else if (value is BitmapData) buf += "null"; // bitmaps sometimes appear in old project info objects
+		else if (value is JackalopeColor) writeObject(value.toJSON());
+		else if (value is RegExp) writeObject(convertRegExp(value));
 		else writeObject(value);
+	}
+
+	private function convertRegExp(r:RegExp):Object {
+		var flags:String = '';
+		if (r.global) flags += 'g';
+		if (r.ignoreCase) flags += 'i';
+		if (r.dotall) flags += 's';
+		if (r.multiline) flags += 'm';
+		if (r.extended) flags += 'x';
+		return {type: 'RegExp', source: r.source, flags: flags};
 	}
 
 	private function writeObject(obj:*):void {

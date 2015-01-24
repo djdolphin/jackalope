@@ -52,21 +52,29 @@ public class LooksPrims {
 		primTable['startScene']				= function(b:*):* { startScene(interp.arg(b, 0), false) };
 		primTable['startSceneAndWait']		= function(b:*):* { startScene(interp.arg(b, 0), true) };
 
-		primTable['say:duration:elapsed:from:']		= function(b:*):* { showBubbleAndWait(b, 'talk') };
-		primTable['say:']							= function(b:*):* { showBubble(b, 'talk') };
-		primTable['think:duration:elapsed:from:']	= function(b:*):* { showBubbleAndWait(b, 'think') };
-		primTable['think:']							= function(b:*):* { showBubble(b, 'think') };
+//		primTable['say:duration:elapsed:from:']		= function(b:*):* { showBubbleAndWait(b, 'talk') };
+//		primTable['say:']							= function(b:*):* { showBubble(b, 'talk') };
+//		primTable['think:duration:elapsed:from:']	= function(b:*):* { showBubbleAndWait(b, 'think') };
+//		primTable['think:']							= function(b:*):* { showBubble(b, 'think') };
+		primTable['showBubble']				= function(b:*):* { showBubble(b) };
+		primTable['showBubbleAndWait']		= function(b:*):* { showBubbleAndWait(b) };
 
 		primTable['changeGraphicEffect:by:'] = primChangeEffect;
 		primTable['setGraphicEffect:to:']	= primSetEffect;
 		primTable['filterReset']			= primClearEffects;
+		primTable['graphicEffect']			= primGetEffect
 
 		primTable['changeSizeBy:']			= primChangeSize;
 		primTable['setSizeTo:']				= primSetSize;
 		primTable['scale']					= primSize;
 
+		primTable['changeStretchBy']		= primChangeStretch;
+		primTable['setStretchTo']			= primSetStretch;
+		primTable['stretch']				= primStretch;
+
 		primTable['show']					= primShow;
 		primTable['hide']					= primHide;
+		primTable['isVisible']				= primIsVisible;
 //		primTable['hideAll']				= primHideAll;
 
 		primTable['comeToFront']			= primGoFront;
@@ -82,6 +90,7 @@ public class LooksPrims {
 //		primTable['yScroll']				= function(b:*):* { return app.stagePane.yScroll };
 
 		primTable['setRotationStyle']		= primSetRotationStyle;
+		primTable['rotationStyle']			= primGetRotationStyle;
 	}
 
 	private function primNextCostume(b:Block):void {
@@ -150,13 +159,19 @@ public class LooksPrims {
 		return costumes[(i + costumes.length) % costumes.length].costumeName;
 	}
 
-	private function showBubbleAndWait(b:Block, type:String):void {
+	private function showBubbleAndWait(b:Block, type:String = null):void {
 		var text:*, secs:Number;
 		var s:ScratchSprite = interp.targetSprite();
 		if (s == null) return;
 		if (interp.activeThread.firstTime) {
-			text = interp.arg(b, 0);
-			secs = interp.numarg(b, 1);
+			if (type == null) { // combined talk/think/shout/whisper command
+				type = interp.arg(b, 0);
+				text = interp.arg(b, 1);
+				secs = interp.numarg(b, 2);
+			} else { // talk or think command
+				text = interp.arg(b, 0);
+				secs = interp.numarg(b, 1);
+			}
 			s.showBubble(text, type, b);
 			if (s.visible) interp.redraw();
 			interp.startTimer(secs);
@@ -204,19 +219,16 @@ public class LooksPrims {
 		if (s.visible || s == Scratch.app.stagePane) interp.redraw();
 	}
 
-	private function primClearEffects(b:Block):void {
+	private function primGetEffect(b:Block):Number {
 		var s:ScratchObj = interp.targetObj();
-		s.clearFilters();
-		s.applyFilters();
-		if (s.visible || s == Scratch.app.stagePane) interp.redraw();
+		var filterName:String = interp.arg(b, 0);
+		return s == null ? 0 : s.filterPack.getFilterSetting(filterName);
 	}
 
-	private function primChangeSize(b:Block):void {
-		var s:ScratchSprite = interp.targetSprite();
-		if (s == null) return;
-		var oldScale:Number = s.scaleX;
-		s.setSize(s.getSize() + interp.numarg(b, 0));
-		if (s.visible && (s.scaleX != oldScale)) interp.redraw();
+	private function primClearEffects(b:Block):void {
+		var s:ScratchObj = interp.targetObj();
+		s.applyFilters();
+		if (s.visible || s == Scratch.app.stagePane) interp.redraw();
 	}
 
 	private function primSetRotationStyle(b:Block):void {
@@ -226,17 +238,61 @@ public class LooksPrims {
 		s.setRotationStyle(newStyle);
 	}
 
+	private function primGetRotationStyle(b:Block):String {
+		var s:ScratchSprite = interp.targetSprite();
+		return s != null ? s.getRotationStyle() : null;
+	}
+
+	private function primChangeSize(b:Block):void {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return;
+		var oldScale:Number = s.size;
+		s.size += interp.numarg(b, 0);
+		s.scaleSprite();
+		if (s.visible && (s.size != oldScale)) interp.redraw();
+	}
+
 	private function primSetSize(b:Block):void {
 		var s:ScratchSprite = interp.targetSprite();
 		if (s == null) return;
-		s.setSize(interp.numarg(b, 0));
+		s.size = interp.numarg(b, 0);
+		s.scaleSprite();
 		if (s.visible) interp.redraw();
 	}
 
 	private function primSize(b:Block):Number {
 		var s:ScratchSprite = interp.targetSprite();
 		if (s == null) return 100;
-		return Math.round(s.getSize()); // reporter returns rounded size, as in Scratch 1.4
+		return Math.round(s.size); // reporter returns rounded size, as in Scrath 1.4
+	}
+
+	private function primChangeStretch(b:Block):void {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return;
+		var d:String = interp.arg(b, 0);
+		if (d == 'horizontal') s.hStretch += interp.numarg(b, 1);
+		if (d == 'vertical') s.vStretch += interp.numarg(b, 1);
+		s.scaleSprite();
+		interp.redraw();
+	}
+
+	private function primSetStretch(b:Block):void {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return;
+		var d:String = interp.arg(b, 0);
+		if (d == 'horizontal') s.hStretch = interp.numarg(b, 1);
+		if (d == 'vertical') s.vStretch = interp.numarg(b, 1);
+		s.scaleSprite();
+		interp.redraw();
+	}
+
+	private function primStretch(b:Block):Number {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return 100;
+		var d:String = interp.arg(b, 0);
+		if (d == 'horizontal') return s.hStretch;
+		if (d == 'vertical') return s.vStretch;
+		return 0;
 	}
 
 	private function primShow(b:Block):void {
@@ -255,6 +311,12 @@ public class LooksPrims {
 		if(!app.isIn3D) s.applyFilters();
 		s.updateBubble();
 		interp.redraw();
+	}
+
+	private function primIsVisible(b:Block):Boolean {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return false;
+		return s.visible;
 	}
 
 	private function primHideAll(b:Block):void {

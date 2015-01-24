@@ -163,6 +163,9 @@ public class Block extends Sprite {
 		} else if (type == "p") {
 			base = new BlockShape(BlockShape.ProcHatShape, color);
 			isHat = true;
+		} else if (type == "C") {
+			base = new BlockShape(BlockShape.RectShape, color);
+			isReporter = true;
 		} else {
 			base = new BlockShape(BlockShape.RectShape, color);
 		}
@@ -193,13 +196,13 @@ public class Block extends Sprite {
 		} else if (op == Specs.GET_VAR || op == Specs.GET_LIST) {
 			labelsAndArgs = [makeLabel(spec)];
 		} else {
-			const loopBlocks:Array = ['doForever', 'doForeverIf', 'doRepeat', 'doUntil'];
+			const loopBlocks:Array = ['doForever', 'doForeverIf', 'doRepeat', 'doUntil', 'doWhile', 'doForLoop'];
 			base.hasLoopArrow = (loopBlocks.indexOf(op) >= 0);
 			addLabelsAndArgs(spec, base.color);
 		}
 		rightToLeft = Translator.rightToLeft;
 		if (rightToLeft) {
-			if (['+', '-', '*', '/', '%'].indexOf(op) > -1) rightToLeft = Translator.rightToLeftMath;
+			if (['+', '-', '*', '/', '^', '%'].indexOf(op) > -1) rightToLeft = Translator.rightToLeftMath;
 			if (['>', '<'].indexOf(op) > -1) rightToLeft = false; // never change order of comparison ops
 		}
 		if (rightToLeft) {
@@ -416,14 +419,17 @@ public class Block extends Sprite {
 		// newArg can be either a reporter block or a literal value (string, number, etc.)
 		collectArgs();
 		if (i >= args.length) return;
-		var oldArg:BlockArg = args[i];
+		var oldArg:DisplayObject = args[i];
 		if (newArg is Block) {
-			labelsAndArgs[labelsAndArgs.indexOf(oldArg)] = newArg;
-			args[i] = newArg;
-			removeChild(oldArg);
-			addChild(newArg);
+			if (!(oldArg is BlockCheckbox)) {
+				labelsAndArgs[labelsAndArgs.indexOf(oldArg)] = newArg;
+				args[i] = newArg;
+				removeChild(oldArg);
+				addChild(newArg);
+			}
 		} else {
-			oldArg.setArgValue(newArg);
+			if (oldArg is BlockCheckbox) BlockCheckbox(oldArg).setOn(newArg);
+			else BlockArg(oldArg).setArgValue(newArg);
 		}
 	}
 
@@ -443,14 +449,17 @@ public class Block extends Sprite {
 		if (suppressLayout) return;
 		var x:int = indentLeft - indentAjustmentFor(labelsAndArgs[0]);
 		var maxH:int = 0;
+		var lastWasColorArg:Boolean = false;
 		for (i = 0; i < labelsAndArgs.length; i++) {
 			item = labelsAndArgs[i];
 			// Next line moves the argument of if and if-else blocks right slightly:
-			if ((i == 1) && !(argTypes[i] == 'label')) x = Math.max(x, 30);
+			if ((i == 1) && !(argTypes[i] == 'label') && (op == 'doIf' || op == 'doIfElse')) x = Math.max(x, 30);
+			if (lastWasColorArg && argTypes[i] == '%n') x += 3;
 			item.x = x;
 			maxH = Math.max(maxH, item.height);
 			x += item.width + 2;
 			if (argTypes[i] == 'icon') x += 3;
+			lastWasColorArg = argTypes[i] == '%c';
 		}
 		x -= indentAjustmentFor(labelsAndArgs[labelsAndArgs.length - 1]);
 
@@ -748,9 +757,10 @@ public class Block extends Sprite {
 		if (s.length >= 2 && s.charAt(0) == "%") { // argument spec
 			var argSpec:String = s.charAt(1);
 			if (argSpec == "b") return new BlockArg("b", c);
+			if (argSpec == "B") return new BlockCheckbox();
 			if (argSpec == "c") return new BlockArg("c", c);
 			if (argSpec == "d") return new BlockArg("d", c, true, s.slice(3));
-			if (argSpec == "m") return new BlockArg("m", c, false, s.slice(3));
+			if (argSpec == "m") return new BlockArg("m", c, true, s.slice(3));
 			if (argSpec == "n") return new BlockArg("n", c, true);
 			if (argSpec == "s") return new BlockArg("s", c, true);
 		} else if (s.length >= 2 && s.charAt(0) == "@") { // icon spec

@@ -45,6 +45,10 @@ public class ScratchSprite extends ScratchObj {
 	public var direction:Number = 90;
 	public var rotationStyle:String = 'normal'; // 'normal', 'leftRight', 'none'
 
+	public var size:Number = 100;
+	public var hStretch:Number = 100;
+	public var vStretch:Number = 100;
+
 	public var isDraggable:Boolean = false;
 	public var indexInLibrary:int;
 	public var bubble:TalkBubble;
@@ -54,6 +58,7 @@ public class ScratchSprite extends ScratchObj {
 	public var penHue:Number = 120; // blue
 	public var penShade:Number = 50; // full brightness and saturation
 	public var penColorCache:Number = 0xFF;
+	public var penTransparency:Number = 0;
 
 	private var cachedBitmap:BitmapData;	// current costume, rotated & scaled
 	private var cachedBounds:Rectangle;		// bounds of non-transparent cachedBitmap in stage coords
@@ -98,6 +103,13 @@ public class ScratchSprite extends ScratchObj {
 		if ('left-right' == newRotationStyle) rotationStyle = 'leftRight';
 		if ("don't rotate" == newRotationStyle) rotationStyle = "none";
 		setDirection(oldDir);
+	}
+
+	public function getRotationStyle():String {
+		if ('normal' == rotationStyle) return 'all around';
+		if ('leftRight' == rotationStyle) return 'left-right';
+		if ('none' == rotationStyle) return "don't rotate";
+		return null;
 	}
 
 	public function duplicate():ScratchSprite {
@@ -151,16 +163,21 @@ public class ScratchSprite extends ScratchObj {
 		isDraggable = spr.isDraggable;
 		indexInLibrary = 100000;
 
+		size = spr.size;
+		hStretch = spr.hStretch;
+		vStretch = spr.vStretch;
+
 		penIsDown = spr.penIsDown;
 		penWidth = spr.penWidth;
 		penHue = spr.penHue;
 		penShade = spr.penShade;
 		penColorCache = spr.penColorCache;
+		penTransparency = spr.penTransparency;
 
 		showCostume(spr.currentCostumeIndex);
 		setDirection(spr.direction);
 		setScratchXY(spr.scratchX, spr.scratchY);
-		setSize(spr.getSize());
+		scaleSprite();
 		applyFilters();
 	}
 
@@ -242,14 +259,13 @@ public class ScratchSprite extends ScratchObj {
 		geomShape.scaleX = img.getChildAt(0).scaleX;
 	}
 
-	public function getSize():Number { return 100 * scaleX; }
-
-	public function setSize(percent:Number):void {
+	public function scaleSprite():void {
 		var origW:int = img.width;
 		var origH:int = img.height;
 		var minScale:Number = Math.min(1, Math.max(5 / origW, 5 / origH));
 		var maxScale:Number = Math.min((1.5 * 480) / origW, (1.5 * 360) / origH);
-		scaleX = scaleY = Math.max(minScale, Math.min(percent / 100.0, maxScale));
+		scaleX = Math.max(minScale, Math.min(size * hStretch / 10000, maxScale));
+		scaleY = Math.max(minScale, Math.min(size * vStretch / 10000, maxScale));
 		clearCachedBitmap();
 		updateBubble();
 	}
@@ -275,6 +291,10 @@ public class ScratchSprite extends ScratchObj {
 		penShade = n % 200;
 		if (penShade < 0) penShade += 200;
 		updateCachedPenColor();
+	}
+
+	public function setPenTransparency(n:Number):void {
+		penTransparency = Math.max(0, Math.min(Math.round(n), 100));
 	}
 
 	private function updateCachedPenColor():void {
@@ -444,7 +464,7 @@ public class ScratchSprite extends ScratchObj {
 		if ('gotoSpriteOrMouse:' == op) return ['_mouse_'];
 		if ('gotoX:y:' == op) return [Math.round(scratchX), Math.round(scratchY)];
 		if ('glideSecs:toX:y:elapsed:from:' == op) return [1, Math.round(scratchX), Math.round(scratchY)];
-		if ('setSizeTo:' == op) return [Math.round(getSize() * 10) / 10];
+		if ('setSizeTo:' == op) return [Math.round(size * 10) / 10];
 		if ((['startScene', 'startSceneAndWait', 'whenSceneStarts'].indexOf(op)) > -1) {
 			var stg:ScratchStage = parent as ScratchStage;
 			if (stg) return [stg.costumes[stg.costumes.length - 1].costumeName];
@@ -478,8 +498,17 @@ public class ScratchSprite extends ScratchObj {
 		if (tool == 'help') Scratch.app.showTip('scratchUI');
 	}
 
-	private function growSprite():void { setSize(getSize() + 5); Scratch.app.updatePalette() }
-	private function shrinkSprite():void { setSize(getSize() - 5); Scratch.app.updatePalette() }
+	private function growSprite():void {
+		size += 5;
+		scaleSprite();
+		Scratch.app.updatePalette()
+	}
+
+	private function shrinkSprite():void {
+		size -= 5;
+		scaleSprite();
+		Scratch.app.updatePalette()
+	}
 
 	public function duplicateSprite(grab:Boolean = false):void {
 		var dup:ScratchSprite = duplicate();
@@ -648,7 +677,9 @@ public class ScratchSprite extends ScratchObj {
 		super.writeJSON(json);
 		json.writeKeyValue('scratchX', scratchX);
 		json.writeKeyValue('scratchY', scratchY);
-		json.writeKeyValue('scale', scaleX);
+		json.writeKeyValue('scale', size / 100);
+		json.writeKeyValue('hStretch', hStretch);
+		json.writeKeyValue('vStretch', vStretch);
 		json.writeKeyValue('direction', direction);
 		json.writeKeyValue('rotationStyle', rotationStyle);
 		json.writeKeyValue('isDraggable', isDraggable);
@@ -661,7 +692,10 @@ public class ScratchSprite extends ScratchObj {
 		super.readJSON(jsonObj);
 		scratchX = jsonObj.scratchX;
 		scratchY = jsonObj.scratchY;
-		scaleX = scaleY = jsonObj.scale;
+		size = jsonObj.scale * 100;
+		hStretch = jsonObj.hStretch || 100;
+		vStretch = jsonObj.vStretch || 100;
+		scaleSprite();
 		direction = jsonObj.direction;
 		rotationStyle = jsonObj.rotationStyle;
 		isDraggable = jsonObj.isDraggable;
@@ -702,5 +736,17 @@ public class ScratchSprite extends ScratchObj {
 	public override function stopDrag():void {
 		super.stopDrag();
 		applyFilters();
+	}
+
+	/* Clones */
+
+ 	public function cloneCount():Number {
+ 		var stage:ScratchStage = Scratch.app.stagePane;
+ 		var count:Number = 0;
+		for (var i:int = 0; i < stage.numChildren; i++) {
+			var o:* = stage.getChildAt(i);
+			if ((o is ScratchSprite) && o.isClone && (o.objName == objName)) count++;
+		}
+		return count;
 	}
 }}

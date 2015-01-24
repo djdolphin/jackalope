@@ -49,6 +49,7 @@ public class Primitives {
 		primTable["-"]				= function(b:*):* { return interp.numarg(b, 0) - interp.numarg(b, 1) };
 		primTable["*"]				= function(b:*):* { return interp.numarg(b, 0) * interp.numarg(b, 1) };
 		primTable["/"]				= function(b:*):* { return interp.numarg(b, 0) / interp.numarg(b, 1) };
+		primTable["^"]				= function(b:*):* { return Math.pow(interp.numarg(b, 0), interp.numarg(b, 1)) };
 		primTable["randomFrom:to:"]	= primRandom;
 		primTable["<"]				= function(b:*):* { return compare(interp.arg(b, 0), interp.arg(b, 1)) < 0 };
 		primTable["="]				= function(b:*):* { return compare(interp.arg(b, 0), interp.arg(b, 1)) == 0 };
@@ -56,12 +57,25 @@ public class Primitives {
 		primTable["&"]				= function(b:*):* { return interp.arg(b, 0) && interp.arg(b, 1) };
 		primTable["|"]				= function(b:*):* { return interp.arg(b, 0) || interp.arg(b, 1) };
 		primTable["not"]			= function(b:*):* { return !interp.arg(b, 0) };
+		primTable["true"]			= function(b:*):* { return true };
+		primTable["false"]			= function(b:*):* { return false };
+		primTable["reportIfElse"]	= function(b:*):* { return interp.arg(b, 0) ? interp.arg(b, 1) : interp.arg(b, 2) }
 		primTable["abs"]			= function(b:*):* { return Math.abs(interp.numarg(b, 0)) };
 		primTable["sqrt"]			= function(b:*):* { return Math.sqrt(interp.numarg(b, 0)) };
 
-		primTable["concatenate:with:"]	= function(b:*):* { return ("" + interp.arg(b, 0) + interp.arg(b, 1)).substr(0, 10240); };
+		primTable["concatenate:with:"]	= function(b:*):* { return "" + interp.arg(b, 0) + interp.arg(b, 1); };
 		primTable["letter:of:"]			= primLetterOf;
+		primTable["lettersOf"]			= primLettersOf;
 		primTable["stringLength:"]		= function(b:*):* { return String(interp.arg(b, 0)).length };
+		primTable["stringContains"]		= primStringContains
+		primTable["stringIndexOf"]		= primStringIndexOf;
+		primTable["stringReplace"]		= primStringReplace;
+		primTable["reportRegex"]		= primReportRegex;
+		primTable["reportRegexWithFlags"] = primReportRegexWithFlags;
+		primTable["testRegex"]			= primTestRegex;
+
+		primTable["reportUnicode"]		= function(b:*):* { return String(interp.arg(b, 0)).charCodeAt(0) };
+		primTable["reportUnicodeAsLetter"] = function(b:*):* { return String.fromCharCode(interp.numarg(b, 0)) };
 
 		primTable["%"]					= primModulo;
 		primTable["rounded"]			= function(b:*):* { return Math.round(interp.numarg(b, 0)) };
@@ -69,8 +83,12 @@ public class Primitives {
 
 		// clone
 		primTable["createCloneOf"]		= primCreateCloneOf;
+		primTable["deleteClonesOf"]		= primDeleteClonesOf;
 		primTable["deleteClone"]		= primDeleteClone;
 		primTable["whenCloned"]			= interp.primNoop;
+		primTable["isClone"]			= primIsClone;
+		primTable["cloneCount"]			= primCloneCount;
+		primTable["totalCloneCount"]	= primTotalCloneCount;
 
 		// testing (for development)
 		primTable["NOOP"]				= interp.primNoop;
@@ -88,6 +106,7 @@ public class Primitives {
 	protected function addOtherPrims(primTable:Dictionary):void {
 		new SensingPrims(app, interp).addPrimsTo(primTable);
 		new ListPrims(app, interp).addPrimsTo(primTable);
+		new ColorPrims(app, interp).addPrimsTo(primTable);
 	}
 
 	private function primRandom(b:Block):Number {
@@ -108,6 +127,63 @@ public class Primitives {
 		var i:int = interp.numarg(b, 0) - 1;
 		if ((i < 0) || (i >= s.length)) return "";
 		return s.charAt(i);
+	}
+
+	private function primLettersOf(b:Block):String {
+		var s:String = interp.arg(b, 2);
+		var start:int = interp.numarg(b, 0) - 1;
+		var end:int = interp.numarg(b, 1);
+		if ((start < 0) || (start >= s.length) || (end < start) || (end > s.length)) return "";
+		return s.substring(start, end);
+	}
+
+	private function primStringContains(b:Block):Boolean {
+		var string:String = interp.arg(b, 0);
+		var search:String = interp.arg(b, 1);
+		return string.indexOf(search) > -1;
+	}
+
+	private function primStringIndexOf(b:Block):Number {
+		var string:String = interp.arg(b, 1);
+		var search:String = interp.arg(b, 0);
+		var start:int = interp.numarg(b, 2) - 1;
+		return string.indexOf(search, start) + 1;
+	}
+
+	private function escapeRegexChars(s:String):String {
+		return s.replace(/([.?*+^$[\]\\(){}|-])/g, '\\$1');
+	}
+
+	private function primStringReplace(b:Block):String {
+		var string:String = interp.arg(b, 1);
+		var replace:String = interp.arg(b, 2);
+		var search:* = interp.arg(b, 0);
+		if (!(search is RegExp)) {
+			search = new RegExp(escapeRegexChars(search), 'g');
+			replace = replace.replace(/\$/g, '$$$$');
+		}
+		return string.replace(search, replace);
+	}
+
+	private function primReportRegex(b:Block):RegExp {
+		var s:String = interp.arg(b, 0);
+		var flags:String = '';
+		if (interp.arg(b, 1)) flags += 'g';
+		if (!interp.arg(b, 2)) flags += 'i';
+		return new RegExp(s, flags);
+	}
+
+	private function primReportRegexWithFlags(b:Block):RegExp {
+		var s:String = interp.arg(b, 0);
+		var flags:String = interp.arg(b, 1);
+		return new RegExp(s, flags);
+	}	
+
+	private function primTestRegex(b:Block):Boolean {
+		var regex:* = interp.arg(b, 1);
+		if (!(regex is RegExp)) regex = new RegExp(regex);
+		var s:String = interp.arg(b, 0);
+		return RegExp(regex).test(s);
 	}
 
 	private function primModulo(b:Block):Number {
@@ -192,6 +268,33 @@ public class Primitives {
 		clone.parent.removeChild(clone);
 		app.interp.stopThreadsFor(clone);
 		app.runtime.cloneCount--;
+	}
+
+	private function primDeleteClonesOf(b:Block):void {
+		var objName:String = interp.arg(b, 0);
+		if ('_all sprites_' == objName) {
+			app.stagePane.deleteClones();
+		} else {
+			var sprite:ScratchSprite = app.stagePane.spriteNamed(objName);
+			if ('_myself_' == objName) sprite = interp.activeThread.target;
+			if (!sprite) return;
+			app.stagePane.deleteClonesOf(sprite);
+		}
+	}
+
+	private function primIsClone(b:Block):Boolean {
+		var clone:ScratchSprite = interp.targetSprite();
+		if ((clone == null) || (!clone.isClone)) return false;
+		return true;
+	}
+
+	private function primCloneCount(b:Block):Number {
+		var s:ScratchSprite = interp.targetSprite();
+		return s != null ? s.cloneCount() : 0;
+	}	
+
+	private function primTotalCloneCount(b:Block):Number {
+		return (app.runtime.cloneCount as Number);
 	}
 
 }}

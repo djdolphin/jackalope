@@ -41,7 +41,7 @@ public class BlockMenus implements DragClient {
 	private static const basicMathOps:Array = ['+', '-', '*', '/'];
 	private static const comparisonOps:Array = ['<', '=', '>'];
 
-	private static const spriteAttributes:Array = ['x position', 'y position', 'direction', 'costume #', 'costume name', 'size', 'volume'];
+	private static const spriteAttributes:Array = ['x position', 'y position', 'direction', 'rotation style', 'costume #', 'costume name', 'size', 'horizontal stretch', 'vertical stretch', 'volume', 'pen hue', 'pen shade', 'pen transparency', 'pen size', 'clone count'];
 	private static const stageAttributes:Array = ['backdrop #', 'backdrop name', 'volume'];
 
 	public static function BlockMenuHandler(evt:MouseEvent, block:Block, blockArg:BlockArg = null, menuName:String = null):void {
@@ -62,9 +62,12 @@ public class BlockMenus implements DragClient {
 		if (menuName == 'booleanSensor') menuHandler.booleanSensorMenu(evt);
 		if (menuName == 'broadcast') menuHandler.broadcastMenu(evt);
 		if (menuName == 'broadcastInfoMenu') menuHandler.broadcastInfoMenu(evt);
+		if (menuName == 'bubbleStyle') menuHandler.bubbleStyleMenu(evt);
 		if (menuName == 'colorPicker') menuHandler.colorPicker(evt);
 		if (menuName == 'costume') menuHandler.costumeMenu(evt);
+		if (menuName == 'deleteClone') menuHandler.spriteMenu(evt, false, false, false, true, true);
 		if (menuName == 'direction') menuHandler.dirMenu(evt);
+		if (menuName == 'draggability') menuHandler.draggabilityMenu(evt);
 		if (menuName == 'drum') menuHandler.drumMenu(evt);
 		if (menuName == 'effect') menuHandler.effectMenu(evt);
 		if (menuName == 'instrument') menuHandler.instrumentMenu(evt);
@@ -80,15 +83,17 @@ public class BlockMenus implements DragClient {
 		if (menuName == 'scrollAlign') menuHandler.scrollAlignMenu(evt);
 		if (menuName == 'sensor') menuHandler.sensorMenu(evt);
 		if (menuName == 'sound') menuHandler.soundMenu(evt);
-		if (menuName == 'spriteOnly') menuHandler.spriteMenu(evt, false, false, false, true);
-		if (menuName == 'spriteOrMouse') menuHandler.spriteMenu(evt, true, false, false, false);
-		if (menuName == 'spriteOrStage') menuHandler.spriteMenu(evt, false, false, true, false);
-		if (menuName == 'touching') menuHandler.spriteMenu(evt, true, true, false, false);
+		if (menuName == 'spriteOnly') menuHandler.spriteMenu(evt, false, false, false, true, false);
+		if (menuName == 'spriteOrMouse') menuHandler.spriteMenu(evt, true, false, false, false, false);
+		if (menuName == 'spriteOrStage') menuHandler.spriteMenu(evt, false, false, true, false, false);
+		if (menuName == 'touching') menuHandler.spriteMenu(evt, true, true, false, false, false);
 		if (menuName == 'stageOrThis') menuHandler.stageOrThisSpriteMenu(evt);
 		if (menuName == 'stop') menuHandler.stopMenu(evt);
+		if (menuName == 'stretchDirection') menuHandler.stretchDirectionMenu(evt);
 		if (menuName == 'timeAndDate') menuHandler.timeAndDateMenu(evt);
 		if (menuName == 'triggerSensor') menuHandler.triggerSensorMenu(evt);
 		if (menuName == 'var') menuHandler.varMenu(evt);
+		if (menuName == 'varStyle') menuHandler.varStyleMenu(evt);
 		if (menuName == 'videoMotionType') menuHandler.videoMotionTypeMenu(evt);
 		if (menuName == 'videoState') menuHandler.videoStateMenu(evt);
 	}
@@ -105,8 +110,11 @@ public class BlockMenus implements DragClient {
 			handler.booleanSensorMenu(evt);
 			handler.broadcastMenu(evt);
 			handler.broadcastInfoMenu(evt);
+			handler.bubbleStyleMenu(evt);
 			handler.costumeMenu(evt);
+			handler.spriteMenu(evt, false, false, false, true, true);
 			handler.dirMenu(evt);
+			handler.draggabilityMenu(evt);
 			handler.drumMenu(evt);
 			handler.effectMenu(evt);
 			handler.genericBlockMenu(evt);
@@ -121,15 +129,17 @@ public class BlockMenus implements DragClient {
 //			handler.scrollAlignMenu(evt);
 			handler.sensorMenu(evt);
 			handler.soundMenu(evt);
-			handler.spriteMenu(evt, false, false, false, true);
-			handler.spriteMenu(evt, true, false, false, false);
-			handler.spriteMenu(evt, false, false, true, false);
-			handler.spriteMenu(evt, true, true, false, false);
+			handler.spriteMenu(evt, false, false, false, true, false);
+			handler.spriteMenu(evt, true, false, false, false, false);
+			handler.spriteMenu(evt, false, false, true, false, false);
+			handler.spriteMenu(evt, true, true, false, false, false);
 			handler.stageOrThisSpriteMenu(evt);
 			handler.stopMenu(evt);
+			handler.stretchDirectionMenu(evt);
 			handler.timeAndDateMenu(evt);
 			handler.triggerSensorMenu(evt);
 			handler.varMenu(evt);
+			handler.varStyleMenu(evt);
 			handler.videoMotionTypeMenu(evt);
 			handler.videoStateMenu(evt);
 		}
@@ -239,6 +249,13 @@ public class BlockMenus implements DragClient {
 		showMenu(m);
 	}
 
+	private function bubbleStyleMenu(evt:MouseEvent):void {
+		var choices:Array = ['say', 'think', 'whisper', 'shout'];
+		var m:Menu = new Menu(this.setBlockArg, 'bubbleStyle');
+		for each(var i:String in choices) m.addItem(i);
+		showMenu(m);
+	}
+
 	private function colorPicker(evt:MouseEvent):void {
 		app.gh.setDragClient(this, evt);
 	}
@@ -258,6 +275,13 @@ public class BlockMenus implements DragClient {
 		m.addItem('(-90) ' + Translator.map('left'), -90);
 		m.addItem('(0) ' + Translator.map('up'), 0);
 		m.addItem('(180) ' + Translator.map('down'), 180);
+		showMenu(m);
+	}
+
+	private function draggabilityMenu(evt:MouseEvent):void {
+		var m:Menu = new Menu(setBlockArg, 'draggability');
+		m.addItem('draggable');
+		m.addItem('undraggable');
 		showMenu(m);
 	}
 
@@ -383,38 +407,32 @@ public class BlockMenus implements DragClient {
 		app.soundsPart.recordSound();
 	}
 
-	private function spriteMenu(evt:MouseEvent, includeMouse:Boolean, includeEdge:Boolean, includeStage:Boolean, includeSelf:Boolean):void {
+	private function spriteMenu(evt:MouseEvent, includeMouse:Boolean, includeEdge:Boolean, includeStage:Boolean, includeSelf:Boolean, includeAll:Boolean):void {
 		function setSpriteArg(s:*):void {
 			if (blockArg == null) return;
 			if (s == 'edge') blockArg.setArgValue('_edge_', Translator.map('edge'));
 			else if (s == 'mouse-pointer') blockArg.setArgValue('_mouse_', Translator.map('mouse-pointer'));
 			else if (s == 'myself') blockArg.setArgValue('_myself_', Translator.map('myself'));
+			else if (s == 'all sprites') blockArg.setArgValue('_all sprites_', Translator.map('all sprites'));
 			else if (s == 'Stage') blockArg.setArgValue('_stage_', Translator.map('Stage'));
 			else blockArg.setArgValue(s);
-			if (block.op == 'getAttribute:of:') {
-				var obj:ScratchObj = app.stagePane.objNamed(s);
-				var attr:String = block.args[0].argValue;
-				var validAttrs:Array = obj && obj.isStage ? stageAttributes : spriteAttributes;
-				if (validAttrs.indexOf(attr) == -1 && !obj.ownsVar(attr)) {
-					block.args[0].setArgValue(validAttrs[0]);
-				}
-			}
 			Scratch.app.setSaveNeeded();
 		}
 		var spriteNames:Array = [];
 		var m:Menu = new Menu(setSpriteArg, 'sprite');
-		if (includeMouse) m.addItem(Translator.map('mouse-pointer'), 'mouse-pointer');
-		if (includeEdge) m.addItem(Translator.map('edge'), 'edge');
+		if (includeMouse) m.addItem('mouse-pointer', 'mouse-pointer');
+		if (includeEdge) m.addItem('edge', 'edge');
 		m.addLine();
 		if (includeStage) {
 			m.addItem(app.stagePane.objName, 'Stage');
 			m.addLine();
 		}
 		if (includeSelf && !app.viewedObj().isStage) {
-			m.addItem(Translator.map('myself'), 'myself');
+			m.addItem('myself', 'myself');
 			m.addLine();
 			spriteNames.push(app.viewedObj().objName);
 		}
+		if (includeAll) m.addItem('all sprites', 'all sprites');
 		for each (var sprite:ScratchSprite in app.stagePane.sprites()) {
 			if (sprite != app.viewedObj()) spriteNames.push(sprite.objName);
 		}
@@ -428,7 +446,7 @@ public class BlockMenus implements DragClient {
 	private function stopMenu(evt:MouseEvent):void {
 		function setStopType(selection:*):void {
 			blockArg.setArgValue(selection);
-			block.setTerminal((selection == 'all') || (selection == 'this script'));
+			block.setTerminal((selection == 'all') || (selection == 'this script') || (selection == 'all and press green flag'));
 			block.type = block.isTerminal ? 'f' : ' ';
 			Scratch.app.setSaveNeeded();
 		}
@@ -438,6 +456,7 @@ public class BlockMenus implements DragClient {
 			m.addItem('this script');
 		}
 		m.addItem(app.viewedObj().isStage ? 'other scripts in stage' : 'other scripts in sprite');
+		m.addItem('all and press green flag');
 		showMenu(m);
 	}
 
@@ -445,6 +464,13 @@ public class BlockMenus implements DragClient {
 		var m:Menu = new Menu(setBlockArg, 'stageOrThis');
 		m.addItem(app.stagePane.objName);
 		if (!app.viewedObj().isStage) m.addItem('this sprite');
+		showMenu(m);
+	}
+
+	private function stretchDirectionMenu(evt:MouseEvent):void {
+		var m:Menu = new Menu(setBlockArg, 'stretchDirection');
+		m.addItem('horizontal');
+		m.addItem('vertical');
 		showMenu(m);
 	}
 
@@ -469,6 +495,14 @@ public class BlockMenus implements DragClient {
 		m.addItem('loudness');
 		m.addItem('timer');
 		m.addItem('video motion');
+		showMenu(m);
+	}
+
+	private function varStyleMenu(evt:MouseEvent):void {
+		var m:Menu = new Menu(setBlockArg, 'varStyle');
+		m.addItem('normal');
+		m.addItem('large');
+		m.addItem('slider');
 		showMenu(m);
 	}
 

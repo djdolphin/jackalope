@@ -33,6 +33,7 @@ public class DialogBox extends Sprite {
 	public var widget:DisplayObject;
 	private var w:int, h:int;
 	public var leftJustify:Boolean;
+	public var createdByScript:Boolean = false;
 
 	private var context:Dictionary;
 	private var title:TextField;
@@ -59,13 +60,14 @@ public class DialogBox extends Sprite {
 		addEventListener(FocusEvent.KEY_FOCUS_CHANGE, focusChange);
 	}
 
-	public static function ask(question:String, defaultAnswer:String, stage:Stage = null, resultFunction:Function = null, context:Dictionary = null):void {
+	public static function ask(question:String, defaultAnswer:String, stage:Stage = null, resultFunction:Function = null, context:Dictionary = null, createdByScript:Boolean = false):void {
 		function done():void { if (resultFunction != null) resultFunction(d.fields['answer'].text) }
 		var d:DialogBox = new DialogBox(done);
 		d.addTitle(question);
 		d.addField('answer', 120, defaultAnswer, false);
 		d.addButton('OK', d.accept);
 		if (context) d.updateContext(context);
+		d.createdByScript = createdByScript;
 		d.showOnStage(stage ? stage : Scratch.app.stage);
 	}
 
@@ -77,13 +79,14 @@ public class DialogBox extends Sprite {
 		d.showOnStage(stage ? stage : Scratch.app.stage);
 	}
 
-	public static function notify(title:String, msg:String, stage:Stage = null, leftJustify:Boolean = false, okFunction:Function = null, cancelFunction:Function = null, context:Dictionary = null):void {
+	public static function notify(title:String, msg:String, stage:Stage = null, leftJustify:Boolean = false, okFunction:Function = null, cancelFunction:Function = null, context:Dictionary = null, createdByScript:Boolean = false):void {
 		var d:DialogBox = new DialogBox(okFunction, cancelFunction);
 		d.leftJustify = leftJustify;
 		d.addTitle(title);
 		d.addText(msg);
 		d.addButton('OK', d.accept);
 		if (context) d.updateContext(context);
+		d.createdByScript = createdByScript;
 		d.showOnStage(stage ? stage : Scratch.app.stage);
 	}
 
@@ -239,7 +242,7 @@ public class DialogBox extends Sprite {
 		}
 	}
 
-	private function remove():void {
+	public function remove():void {
 		if (parent != null) parent.removeChild(this);
 	}
 

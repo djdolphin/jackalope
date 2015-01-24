@@ -592,7 +592,7 @@ public class ListWatcher extends Sprite {
 
 	public function readJSON(obj:Object):void {
 		listName = obj.listName;
-		contents = obj.contents;
+		for (var i:int = 0; i < obj.contents.length; i++) contents.push(Scratch.app.runtime.convertVarValue(obj.contents[i]));
 		isPersistent = (obj.isPersistent == undefined) ? false : obj.isPersistent; // handle old projects gracefully
 		x = obj.x;
 		y = obj.y;

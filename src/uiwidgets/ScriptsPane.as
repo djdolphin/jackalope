@@ -343,9 +343,6 @@ return true; // xxx disable this check for now; it was causing confusion at Scra
 	}
 
 	private function dropCompatible(droppedBlock:Block, target:DisplayObject):Boolean {
-		const menusThatAcceptReporters:Array = [
-			'broadcast', 'costume', 'backdrop', 'scene', 'sound',
-			'spriteOnly', 'spriteOrMouse', 'spriteOrStage', 'touching'];
 		if (!droppedBlock.isReporter) return true; // dropping a command block
 		if (target is Block) {
 			if (Block(target).isEmbeddedInProcHat()) return false;
@@ -353,11 +350,7 @@ return true; // xxx disable this check for now; it was causing confusion at Scra
 		}
 		var dropType:String = droppedBlock.type;
 		var targetType:String = target is Block ? Block(target.parent).argType(target).slice(1) : BlockArg(target).type;
-		if (targetType == 'm') {
-			if (Block(target.parent).type == 'h') return false;
-			return menusThatAcceptReporters.indexOf(BlockArg(target).menuName) > -1;
-		}
-		if (targetType == 'b') return dropType == 'b';
+		if (targetType == 'm') return Block(target.parent).type != 'h';
 		return true;
 	}
 

@@ -48,6 +48,9 @@ public class ListPrims {
 		primTable['getLine:ofList:']	= primGetItem;
 		primTable['lineCountOfList:']	= primLength;
 		primTable['list:contains:']		= primContains;
+		primTable['listIndexOf']		= primListIndexOf;
+		primTable['makeList']			= primListCreate;
+		primTable['deleteList']			= primListDelete;
 	}
 
 	private function primContents(b:Block):String {
@@ -159,6 +162,14 @@ public class ListPrims {
 		return false;
 	}
 
+	private function primListIndexOf(b:Block):Number {
+		var list:ListWatcher = listarg(b, 1);
+		if (!list) return 0;
+		var search:String = interp.arg(b, 0);
+		var start:Number = interp.numarg(b, 2) - 1;
+		return list.contents.indexOf(search, start) + 1;
+	}
+
 	private function listarg(b:Block, i:int):ListWatcher {
 		var listName:String = interp.arg(b, i);
 		if (listName.length == 0) return null;
@@ -181,6 +192,23 @@ public class ListPrims {
 		i = (n is int) ? n : Math.floor(n);
 		if ((i < 1) || (i > len)) return -1;
 		return i;
+	}
+
+	private function primListCreate(b:Block):void {
+		var obj:ScratchObj = interp.targetObj();
+		var listName:String = interp.arg(b, 0);
+		if (obj.lookupList(listName)) return;
+		var l:ListWatcher = new ListWatcher(listName, [], obj);
+		obj.lists.push(l);
+		app.updatePalette();
+	}
+	
+	private function primListDelete(b:Block):void {
+		var obj:ScratchObj = interp.targetObj();
+		var listName:String = interp.arg(b, 0);
+		if (!obj.lookupList(listName)) return;
+		obj.deleteList(listName);
+		app.updatePalette();
 	}
 
 }}

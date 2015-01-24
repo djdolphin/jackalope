@@ -154,29 +154,25 @@ public class PaletteBuilder {
 		// variable buttons, reporters, and set/change blocks
 		addItem(new Button(Translator.map('Make a Variable'), makeVariable));
 		var varNames:Array = app.runtime.allVarNames().sort();
-		if (varNames.length > 0) {
-			for each (var n:String in varNames) {
-				addVariableCheckbox(n, false);
-				addItem(new Block(n, 'r', catColor, Specs.GET_VAR), true);
-			}
-			nextY += 10;
-			addBlocksForCategory(Specs.dataCategory, catColor);
-			nextY += 15;
+		for each (var n:String in varNames) {
+			addVariableCheckbox(n, false);
+			addItem(new Block(n, 'r', catColor, Specs.GET_VAR), true);
 		}
+		nextY += 10;
+		addBlocksForCategory(Specs.dataCategory, catColor);
+		nextY += 15;
 
 		// lists
 		catColor = Specs.listColor;
 		addItem(new Button(Translator.map('Make a List'), makeList));
 
 		var listNames:Array = app.runtime.allListNames().sort();
-		if (listNames.length > 0) {
-			for each (n in listNames) {
-				addVariableCheckbox(n, true);
-				addItem(new Block(n, 'r', catColor, Specs.GET_LIST), true);
-			}
-			nextY += 10;
-			addBlocksForCategory(Specs.listCategory, catColor);
+		for each (n in listNames) {
+			addVariableCheckbox(n, true);
+			addItem(new Block(n, 'r', catColor, Specs.GET_LIST), true);
 		}
+		nextY += 10;
+		addBlocksForCategory(Specs.listCategory, catColor);
 		updateCheckboxes();
 	}
 
@@ -288,15 +284,18 @@ public class PaletteBuilder {
 
 	protected function isCheckboxReporter(op:String):Boolean {
 		const checkboxReporters: Array = [
-			'xpos', 'ypos', 'heading', 'costumeIndex', 'scale', 'volume', 'timeAndDate',
+			'xpos', 'ypos', 'heading', 'costumeIndex', 'costumeName', 'scale', 'volume', 'timeAndDate',
 			'backgroundIndex', 'sceneName', 'tempo', 'answer', 'timer', 'soundLevel', 'isLoud',
 			'sensor:', 'sensorPressed:', 'senseVideoMotion', 'xScroll', 'yScroll',
-			'getDistance', 'getTilt'];
+			'getDistance', 'getTilt', 'graphicEffect', 'stretch', 'isVisible', 'cloneCount',
+			'totalCloneCount', 'penIsDown', 'penColor', 'penHue', 'penShade', 'penSize', 'penTransparency',
+			'rotationStyle', 'isDraggable'];
 		return checkboxReporters.indexOf(op) > -1;
 	}
 
 	private function isSpriteSpecific(op:String):Boolean {
-		const spriteSpecific: Array = ['costumeIndex', 'xpos', 'ypos', 'heading', 'scale', 'volume'];
+		const spriteSpecific: Array = ['costumeIndex', 'costumeName', 'xpos', 'ypos', 'heading', 'rotationStyle', 'isDraggable',
+		'scale', 'stretch', 'volume', 'isVisible', 'penIsDown', 'penColor', 'penHue', 'penShade', 'penSize', 'penTransparency', 'cloneCount'];
 		return spriteSpecific.indexOf(op) > -1;
 	}
 
@@ -335,6 +334,11 @@ public class PaletteBuilder {
 			case 'sensor:':
 			case 'sensorPressed:':
 			case 'timeAndDate':
+				data.param = getBlockArg(data.block, 0);
+				break;
+			case 'graphicEffect':
+			case 'stretch':
+				data.targetObj = app.viewedObj();
 				data.param = getBlockArg(data.block, 0);
 				break;
 			}

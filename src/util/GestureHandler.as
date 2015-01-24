@@ -74,7 +74,8 @@ public class GestureHandler {
 	public var carriedObj:Sprite;
 	private var originalParent:DisplayObjectContainer;
 	private var originalPosition:Point;
-	private var originalScale:Number;
+	private var originalScaleX:Number;
+	private var originalScaleY:Number;
 
 	private var app:Scratch;
 	private var stage:Stage;
@@ -470,7 +471,8 @@ public class GestureHandler {
 
 		originalParent = obj.parent; // parent is null if objToGrab() returns a new object
 		originalPosition = new Point(obj.x, obj.y);
-		originalScale = obj.scaleX;
+		originalScaleX = obj.scaleX;
+		originalScaleY = obj.scaleY;
 
 		if (obj is Block) {
 			var b:Block = Block(obj);
@@ -546,7 +548,8 @@ public class GestureHandler {
 			} else if (originalParent) { // put carriedObj back where it came from
 				carriedObj.x = originalPosition.x;
 				carriedObj.y = originalPosition.y;
-				carriedObj.scaleX = carriedObj.scaleY = originalScale;
+				carriedObj.scaleX = originalScaleX;
+				carriedObj.scaleY = originalScaleY;
 				originalParent.addChild(carriedObj);
 				if (carriedObj is ScratchSprite) {
 					var ss:ScratchSprite = carriedObj as ScratchSprite;
@@ -578,9 +581,9 @@ public class GestureHandler {
 		o.filters = newFilters;
 	}
 
-	public function showBubble(text:String, x:Number, y:Number, width:Number = 0):void {
+	public function showBubble(contents:*, x:Number, y:Number, width:Number = 0):void {
 		hideBubble();
-		bubble = new TalkBubble(text || ' ', 'say', 'result', this);
+		bubble = new TalkBubble(contents, 'say', 'result', this);
 		bubbleStartX = stage.mouseX;
 		bubbleStartY = stage.mouseY;
 		var bx:Number = x + width;

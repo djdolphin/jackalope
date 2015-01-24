@@ -29,6 +29,9 @@ package primitives {
 	import blocks.Block;
 	import interpreter.*;
 	import scratch.*;
+	import uiwidgets.DialogBox;
+	import watchers.Watcher;
+	import watchers.ListWatcher;
 
 public class SensingPrims {
 
@@ -42,12 +45,18 @@ public class SensingPrims {
 
 	public function addPrimsTo(primTable:Dictionary):void {
 		// sensing
+		primTable['name']				= primName;
+		primTable['setName']			= primSetName;
+
 		primTable['touching:']			= primTouching;
 		primTable['touchingColor:']		= primTouchingColor;
 		primTable['color:sees:']		= primColorSees;
 
 		primTable['doAsk']				= primAsk;
+		primTable['askInDialog']		= primAskInDialog;
 		primTable['answer']				= function(b:*):* { return app.runtime.lastAnswer };
+
+		primTable['showDialog']			= primShowDialog;
 
 		primTable['mousePressed']		= function(b:*):* { return app.gh.mouseIsDown };
 		primTable['mouseX']				= function(b:*):* { return app.stagePane.scratchMouseX() };
@@ -56,6 +65,7 @@ public class SensingPrims {
 		primTable['timerReset']			= function(b:*):* { app.runtime.timerReset() };
 		primTable['keyPressed:']		= primKeyPressed;
 		primTable['distanceTo:']		= primDistanceTo;
+		primTable['distanceToPoint']	= primDistanceToPoint;
 		primTable['getAttribute:of:']	= primGetAttribute;
 		primTable['soundLevel']			= function(b:*):* { return app.runtime.soundLevel() };
 		primTable['isLoud']				= function(b:*):* { return app.runtime.isLoud() };
@@ -70,8 +80,12 @@ public class SensingPrims {
 		// variable and list watchers
 		primTable['showVariable:']		= primShowWatcher;
 		primTable['hideVariable:']		= primHideWatcher;
+		primTable['moveVariable']		= primMoveWatcher;
+		primTable['setVariableStyle']	= primSetWatcherStyle;
+		primTable['setVariableColor']	= primSetWatcherColor;
 		primTable['showList:']			= primShowListWatcher;
 		primTable['hideList:']			= primHideListWatcher;
+		primTable['moveList']			= primMoveListWatcher;
 	}
 
 	// TODO: move to stage
@@ -221,6 +235,22 @@ public class SensingPrims {
 		}
 	}
 
+	private function primAskInDialog(b:Block):void {
+		if (app.runtime.askPromptShowing()) {
+			// wait if (1) some other sprite is asking (2) this question is answered (when firstTime is false)
+			interp.doYield();
+			return;
+		}
+		var obj:ScratchObj = interp.targetObj();
+		if (interp.activeThread.firstTime) {
+			app.runtime.showAskDialog(interp.arg(b, 0), '');
+			interp.activeThread.firstTime = false;
+			interp.doYield();
+		} else {
+			interp.activeThread.firstTime = true;
+		}
+	}
+
 	private function primKeyPressed(b:Block):Boolean {
 		var key:String = interp.arg(b, 0);
 		var ch:int = key.charCodeAt(0);
@@ -242,6 +272,14 @@ public class SensingPrims {
 		return Math.sqrt((dx * dx) + (dy * dy));
 	}
 
+	private function primDistanceToPoint(b:Block):Number {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return 0;
+		var dx:Number = interp.numarg(b, 0) - s.scratchX;
+		var dy:Number = interp.numarg(b, 1) - s.scratchY;
+		return Math.sqrt((dx * dx) + (dy * dy));
+	}
+
 	private function primGetAttribute(b:Block):* {
 		var attribute:String = interp.arg(b, 0);
 		var obj:ScratchObj = app.stagePane.objNamed(String(interp.arg(b, 1)));
@@ -251,10 +289,18 @@ public class SensingPrims {
 			if ('x position' == attribute) return s.scratchX;
 			if ('y position' == attribute) return s.scratchY;
 			if ('direction' == attribute) return s.direction;
+			if ('rotation style' == attribute) return s.getRotationStyle();
 			if ('costume #' == attribute) return s.costumeNumber();
 			if ('costume name' == attribute) return s.currentCostume().costumeName;
-			if ('size' == attribute) return s.getSize();
+			if ('size' == attribute) return s.size;
+			if ('horizontal stretch' == attribute) return s.hStretch;
+			if ('vertical stretch' == attribute) return s.vStretch;
 			if ('volume' == attribute) return s.volume;
+			if ('pen hue' == attribute) return s.penHue;
+			if ('pen shade' == attribute) return s.penShade;
+			if ('pen size' == attribute) return s.penWidth;
+			if ('pen transparency' == attribute) return s.penTransparency;
+			if ('clone count' == attribute) return s.cloneCount();
 		} if (obj is ScratchStage) {
 			if ('background #' == attribute) return obj.costumeNumber(); // support for old 1.4 blocks
 			if ('backdrop #' == attribute) return obj.costumeNumber();
@@ -287,6 +333,35 @@ public class SensingPrims {
 		if (obj) app.runtime.hideVarOrListFor(interp.arg(b, 0), false, obj);
 	}
 
+	private function primMoveWatcher(b:Block):* {
+		var obj:ScratchObj = interp.targetObj();
+		var w:Watcher = app.runtime.existingWatcherForVar(obj, interp.arg(b, 0));
+		if (!w) return;
+		w.x = Math.max(0, Math.min(240 + Math.round(interp.numarg(b, 1)), 480));
+		w.y = Math.max(0, Math.min(180 - Math.round(interp.numarg(b, 1)), 360));
+	}
+
+	private function primSetWatcherStyle(b:Block):* {
+		var obj:ScratchObj = interp.targetObj();
+		var w:Watcher = app.runtime.existingWatcherForVar(obj, interp.arg(b, 0));
+		if (!w) return;
+		var m:String = interp.arg(b, 1);
+		var mode:int;
+		if (m == 'normal') mode = 1
+		else if (m == 'large') mode = 2
+		else if (m == 'slider') mode = 3
+		else return;
+		w.setMode(mode);
+	}
+	
+	private function primSetWatcherColor(b:Block):* {
+		var obj:ScratchObj = interp.targetObj();
+		var w:Watcher = app.runtime.existingWatcherForVar(obj, interp.arg(b, 0));
+		if (!w) return;
+		var c:int = interp.arg(b, 1) | 0xFF000000;
+		w.setColor(c);
+	}
+
 	private function primShowListWatcher(b:Block):* {
 		var obj:ScratchObj = interp.targetObj();
 		if (obj) app.runtime.showVarOrListFor(interp.arg(b, 0), true, obj);
@@ -297,6 +372,14 @@ public class SensingPrims {
 		if (obj) app.runtime.hideVarOrListFor(interp.arg(b, 0), true, obj);
 	}
 
+	private function primMoveListWatcher(b:Block):* {
+		var obj:ScratchObj = interp.targetObj();
+		var w:DisplayObject = app.runtime.watcherForList(obj, interp.arg(b, 0));
+		if (!w) return;
+		w.x = Math.max(0, Math.min(240 + Math.round(interp.numarg(b, 1)), 480));
+		w.y = Math.max(0, Math.min(180 - Math.round(interp.numarg(b, 1)), 360));
+	}
+
 	private function primTimestamp(b:Block):* {
 		const millisecondsPerDay:int = 24 * 60 * 60 * 1000;
 		const epoch:Date = new Date(2000, 0, 1); // Jan 1, 2000 (Note: Months are zero-based.)
@@ -305,6 +388,21 @@ public class SensingPrims {
 		var mSecsSinceEpoch:Number = now.time - epoch.time;
 		mSecsSinceEpoch += ((now.timezoneOffset - dstAdjust) * 60 * 1000); // adjust to UTC (GMT)
 		return mSecsSinceEpoch / millisecondsPerDay;
+	}
+
+	private function primShowDialog(b:Block):void {
+		DialogBox.notify(interp.arg(b, 0), interp.arg(b, 1), app.stage, false, null, null, null, true);
+	}
+
+	private function primName(b:Block):String {
+		var s:ScratchObj = interp.targetObj();
+		return s == null ? "" : s.objName;
+	}
+
+	private function primSetName(b:Block):void {
+		var s:ScratchSprite = interp.targetSprite();
+		if ((s == null) || (s.parent == null) || s.isClone) return;
+		s.objName = interp.arg(b, 0);
 	}
 
 }}

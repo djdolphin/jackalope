@@ -281,6 +281,28 @@ public class BlockIO {
 			b = new Block('forever', 'cf', controlColor, 'doForever');
 			b.insertBlockSub1(ifBlock);
 			return b;
+		case 'say:duration:elapsed:from:':
+			b = new Block('%m.bubbleStyle %s for %n secs', 'r', looksColor, 'showBubbleAndWait');
+			b.setArg(0, 'say');
+			b.setArg(1, convertArg(cmd[1]));
+			b.setArg(2, convertArg(cmd[2]));
+			return b;
+		case 'say:':
+			b = new Block('%m.bubbleStyle %s for %n secs', 'r', looksColor, 'showBubble');
+			b.setArg(0, 'say');
+			b.setArg(1, convertArg(cmd[1]));
+			return b;
+		case 'think:duration:elapsed:from:':
+			b = new Block('%m.bubbleStyle %s for %n secs', 'r', looksColor, 'showBubbleAndWait');
+			b.setArg(0, 'think');
+			b.setArg(1, convertArg(cmd[1]));
+			b.setArg(2, convertArg(cmd[2]));
+			return b;
+		case 'think:':
+			b = new Block('%m.bubbleStyle %s for %n secs', 'r', looksColor, 'showBubble');
+			b.setArg(0, 'think');
+			b.setArg(1, convertArg(cmd[1]));
+			return b;
 		}
 		return null;
 	}
@@ -292,7 +314,7 @@ public class BlockIO {
 
 	private static function fixMouseEdgeRefs(b:Block):void {
 		var refCmds:Array = [
-			'createCloneOf', 'distanceTo:', 'getAttribute:of:',
+			'createCloneOf', 'deleteClonesOf', 'distanceTo:', 'getAttribute:of:',
 			'gotoSpriteOrMouse:', 'pointTowards:', 'touching:'];
 		if (refCmds.indexOf(b.op) < 0) return;
 		var arg:BlockArg;
@@ -304,6 +326,7 @@ public class BlockIO {
 			if (oldVal == 'mouse' || oldVal == '_mouse_') arg.setArgValue('_mouse_', Translator.map('mouse-pointer'));
 			if (oldVal == '_myself_') arg.setArgValue('_myself_', Translator.map('myself'));
 			if (oldVal == '_stage_') arg.setArgValue('_stage_', Translator.map('Stage'));
+			if (oldVal == '_all sprites_') arg.setArgValue('_all sprites_', Translator.map('all sprites'));
 		}
 	}
 
