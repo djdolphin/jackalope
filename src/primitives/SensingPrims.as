@@ -338,7 +338,7 @@ public class SensingPrims {
 		var w:Watcher = app.runtime.existingWatcherForVar(obj, interp.arg(b, 0));
 		if (!w) return;
 		w.x = Math.max(0, Math.min(240 + Math.round(interp.numarg(b, 1)), 480));
-		w.y = Math.max(0, Math.min(180 - Math.round(interp.numarg(b, 1)), 360));
+		w.y = Math.max(0, Math.min(180 - Math.round(interp.numarg(b, 2)), 360));
 	}
 
 	private function primSetWatcherStyle(b:Block):* {
@@ -377,7 +377,7 @@ public class SensingPrims {
 		var w:DisplayObject = app.runtime.watcherForList(obj, interp.arg(b, 0));
 		if (!w) return;
 		w.x = Math.max(0, Math.min(240 + Math.round(interp.numarg(b, 1)), 480));
-		w.y = Math.max(0, Math.min(180 - Math.round(interp.numarg(b, 1)), 360));
+		w.y = Math.max(0, Math.min(180 - Math.round(interp.numarg(b, 2)), 360));
 	}
 
 	private function primTimestamp(b:Block):* {

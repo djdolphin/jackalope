@@ -29,6 +29,9 @@ package primitives {
 	import flash.geom.*;
 	import flash.utils.Dictionary;
 
+	import flash.text.TextField;
+	import flash.text.TextFormat;
+
 	import interpreter.*;
 
 	import scratch.*;
@@ -92,6 +95,7 @@ public class MotionAndPenPrims {
 		primTable["drawCircle"]			= primDrawCircle;
 		primTable["drawEllipse"]		= primDrawEllipse;
 		primTable["drawRoundedRectangle"] = primDrawRoundedRectangle;
+		primTable["drawText"]			= primDrawText;
 	}
 
 	private function primMove(b:Block):void {
@@ -414,6 +418,28 @@ public class MotionAndPenPrims {
 		g.drawRoundRect(startX, startY, width, height, rounding);
 		g.endFill();
 		app.stagePane.penActivity = true;
+	}
+
+	private function primDrawText(b:Block):void {
+		var s:ScratchSprite = interp.targetSprite();
+		if (s == null) return;
+
+		var penBM:BitmapData = app.stagePane.penLayer.bitmapData;
+		var x:int = Math.max(0, Math.min(240 + Math.round(interp.numarg(b, 1)), 480)),
+			y:int = Math.max(0, Math.min(180 - Math.round(interp.numarg(b, 2)), 360)),
+			font:String = interp.arg(b, 3);
+
+		var tf:TextFormat = new TextFormat(font, s.penWidth, s.penColorCache);
+		var m:Matrix = new Matrix();
+		m.translate(x, y);
+
+		var t:TextField = new TextField();
+		t.text = interp.arg(b, 0);
+		t.embedFonts = true;
+		t.setTextFormat(tf);
+
+		penBM.draw(t, m);
+		interp.redraw();
 	}
 
 	private function doStamp(s:ScratchSprite, stampAlpha:Number):void {

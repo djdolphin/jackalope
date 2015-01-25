@@ -70,6 +70,7 @@ public class BlockMenus implements DragClient {
 		if (menuName == 'draggability') menuHandler.draggabilityMenu(evt);
 		if (menuName == 'drum') menuHandler.drumMenu(evt);
 		if (menuName == 'effect') menuHandler.effectMenu(evt);
+		if (menuName == 'font') menuHandler.fontMenu(evt);
 		if (menuName == 'instrument') menuHandler.instrumentMenu(evt);
 		if (menuName == 'key') menuHandler.keyMenu(evt);
 		if (menuName == 'list') menuHandler.listMenu(evt);
@@ -117,6 +118,7 @@ public class BlockMenus implements DragClient {
 			handler.draggabilityMenu(evt);
 			handler.drumMenu(evt);
 			handler.effectMenu(evt);
+			handler.fontMenu(evt);
 			handler.genericBlockMenu(evt);
 			handler.instrumentMenu(evt);
 			handler.listMenu(evt);
@@ -307,6 +309,17 @@ public class BlockMenus implements DragClient {
 		for each (var s:String in items) m.addItem(s);
 		showMenu(m);
 		return true;
+	}
+
+	private function fontMenu(evt:MouseEvent):void {
+		var m:Menu = new Menu(setBlockArg, 'font');
+		m.addItem('Donegal');
+		m.addItem('Gloria');
+		m.addItem('Helvetica');
+		m.addItem('Marker');
+		m.addItem('Mystery');
+		m.addItem('Scratch');
+		showMenu(m);
 	}
 
 	private function instrumentMenu(evt:MouseEvent):void {

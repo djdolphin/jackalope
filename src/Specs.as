@@ -238,6 +238,7 @@ public class Specs {
 		["draw circle at x:%n y:%n radius %n",	" ", 4, "drawCircle", 0, 0, 50],
 		["draw ellipse at x:%n y:%n width %n height %n", " ", 4, "drawEllipse", 0, 0, 100, 50],
 		["draw rounded rectangle at x:%n y:%n width %n height %n border radius %n", " ", 4, "drawRoundedRectangle", 0, 0, 100, 100, 10],
+		["draw text %s at x: %n y: %n font %m.font", " ", 4, "drawText", "Hello!", 0, 0, "Helvetica"],
 
 		// stage pen
 		["clear",								" ", 104, "clearPenTrails"],
