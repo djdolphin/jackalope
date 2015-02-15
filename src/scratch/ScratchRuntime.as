@@ -43,6 +43,9 @@ package scratch {
 
 public class ScratchRuntime {
 
+	[Embed(source='../assets/jackalope.png')] protected static var JackalopeCostume:Class;
+	[Embed(source='../assets/pop.wav', mimeType='application/octet-stream')] protected static var Pop:Class;
+
 	public var app:Scratch;
 	public var interp:Interpreter;
 	public var motionDetector:VideoMotionPrims;
@@ -354,7 +357,16 @@ public class ScratchRuntime {
 	}
 
 	public function installNewProject():void {
-		installEmptyProject();
+		var stage:ScratchStage = new ScratchStage();
+		var sprite:ScratchSprite = new ScratchSprite('Sprite1');
+		var jackalopeCostume:Bitmap = new JackalopeCostume();
+		sprite.costumes = [new ScratchCostume(Translator.map('costume1'), jackalopeCostume.bitmapData)];
+		sprite.showCostume(0);
+		sprite.sounds = [new ScratchSound(Translator.map('pop'), new Pop())];
+		stage.addChild(sprite);
+		app.saveForRevert(new ProjectIO(app).encodeProjectAsZipFile(stage), true);
+		app.oldWebsiteURL = '';
+		installProject(stage);
 	}
 
 	public function selectProjectFile():void {
