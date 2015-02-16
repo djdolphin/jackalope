@@ -103,8 +103,8 @@ public class UIPart extends Sprite {
 
 	/* Text Menu Buttons */
 
-	public static function makeMenuButton(s:String, fcn:Function, hasArrow:Boolean = false, labelColor:int = 0xFFFFFF):IconButton {
-		var onImg:Sprite = makeButtonLabel(Translator.map(s), CSS.buttonLabelOverColor, hasArrow);
+	public static function makeMenuButton(s:String, fcn:Function, hasArrow:Boolean = false, labelColor:int = 0xFFFFFF, labelOverColor:int = 0):IconButton {
+		var onImg:Sprite = makeButtonLabel(Translator.map(s), labelOverColor || CSS.buttonLabelOverColor, hasArrow);
 		var offImg:Sprite = makeButtonLabel(Translator.map(s), labelColor, hasArrow);
 		var btn:IconButton = new IconButton(fcn, onImg, offImg);
 		btn.isMomentary = true;
