@@ -37,7 +37,7 @@ public class CSS {
 	public static const borderColor:int = 0xD0D1D2;
 	public static const textColor:int = 0x5C5D5F; // 0x6C6D6F
 	public static const buttonLabelColor:int = textColor;
-	public static const buttonLabelOverColor:int = 0xFBA939;
+	public static const buttonLabelOverColor:int = 0xFEEACD;
 	public static const offColor:int = 0x8F9193; // 0x9FA1A3
 	public static const onColor:int = textColor; // 0x4C4D4F
 	public static const overColor:int = 0xFF6600;
