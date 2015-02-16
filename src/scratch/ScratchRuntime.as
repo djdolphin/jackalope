@@ -43,7 +43,8 @@ package scratch {
 
 public class ScratchRuntime {
 
-	[Embed(source='../assets/jackalope.png')] protected static var JackalopeCostume:Class;
+	[Embed(source='../assets/jackalopeCostume1.svg', mimeType='application/octet-stream')] protected static var JackalopeCostume1:Class;
+	[Embed(source='../assets/jackalopeCostume2.svg', mimeType='application/octet-stream')] protected static var JackalopeCostume2:Class;
 	[Embed(source='../assets/pop.wav', mimeType='application/octet-stream')] protected static var Pop:Class;
 
 	public var app:Scratch;
@@ -357,10 +358,11 @@ public class ScratchRuntime {
 	}
 
 	public function installNewProject():void {
-		var stage:ScratchStage = new ScratchStage();
-		var sprite:ScratchSprite = new ScratchSprite('Sprite1');
-		var jackalopeCostume:Bitmap = new JackalopeCostume();
-		sprite.costumes = [new ScratchCostume(Translator.map('costume1'), jackalopeCostume.bitmapData)];
+		var stage:ScratchStage = new ScratchStage(),
+			sprite:ScratchSprite = new ScratchSprite('Sprite1'),
+			costume1:ScratchCostume = new ScratchCostume(Translator.map('costume1'), new JackalopeCostume1()),
+			costume2:ScratchCostume = new ScratchCostume(Translator.map('costume2'), new JackalopeCostume2());
+		sprite.costumes = [costume1, costume2];
 		sprite.showCostume(0);
 		sprite.sounds = [new ScratchSound(Translator.map('pop'), new Pop())];
 		stage.addChild(sprite);

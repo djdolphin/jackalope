@@ -33,6 +33,8 @@ package ui.parts {
 public class TopBarPart extends UIPart {
 
 	private var shape:Shape;
+
+	private var logo:Bitmap;
 	protected var languageButton:IconButton;
 
 	protected var fileMenu:IconButton;
@@ -56,8 +58,11 @@ public class TopBarPart extends UIPart {
 
 	protected function addButtons():void {
 		addChild(shape = new Shape());
+		addChild(logo = Resources.createBmp('jackalopeLogo'));
 		addChild(languageButton = new IconButton(app.setLanguagePressed, 'languageButton'));
-		languageButton.x = 9;
+		logo.x = 5;
+		logo.y = 5;
+		languageButton.x = logo.x + logo.width + 9;
 		languageButton.isMomentary = true;
 		addTextButtons();
 		addToolButtons();

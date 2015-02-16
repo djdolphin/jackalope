@@ -30,7 +30,7 @@ public class CSS {
 
 	// Colors
 	public static const white:int = 0xFFFFFF;
-	public static const topBarColor:int = 0x9C9EA2;
+	public static const topBarColor:int = 0xFF942A;
 	public static const tabColor:int = 0xE6E8E8;
 	public static const panelColor:int = 0xF2F2F2;
 	public static const itemSelectedColor:int = 0xD0D0D0;
@@ -40,7 +40,7 @@ public class CSS {
 	public static const buttonLabelOverColor:int = 0xFBA939;
 	public static const offColor:int = 0x8F9193; // 0x9FA1A3
 	public static const onColor:int = textColor; // 0x4C4D4F
-	public static const overColor:int = 0x179FD7;
+	public static const overColor:int = 0xFF6600;
 	public static const arrowColor:int = 0xA6A8AC;
 
 	// Fonts
