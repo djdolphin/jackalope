@@ -145,14 +145,28 @@ public class BitmapEdit extends ImageEdit {
 			bakeIntoBitmap();
 			saveToCostume();
 		}
+
+		var cropToolEnabled:Boolean = (currentTool is ObjectTransformer && !!(currentTool as ObjectTransformer).getSelection());
+		imagesPart.setCanCrop(cropToolEnabled);
 	}
 
-	public function deletingSelection():void {
-		if (app.runtime.shiftIsDown) {
+	public function cropToSelection():void {
+		var sel:Selection;
+		var transformTool:ObjectTransformer = currentTool as ObjectTransformer;
+		if (transformTool) {
+			sel = transformTool.getSelection();
+		}
+		if (sel) {
 			var bm:BitmapData = workArea.getBitmap().bitmapData;
 			bm.fillRect(bm.rect, 0);
 			app.runtime.shiftIsDown = false;
 			bakeIntoBitmap(false);
+		}
+	}
+
+	public function deletingSelection():void {
+		if (app.runtime.shiftIsDown) {
+			cropToSelection();
 		}
 	}
 
@@ -219,6 +233,7 @@ public class BitmapEdit extends ImageEdit {
 	}
 
 	override public function setToolMode(newMode:String, bForce:Boolean = false, fromButton:Boolean = false):void {
+		imagesPart.setCanCrop(false);
 		highlightTool('none');
 		var obj:ISVGEditable = null;
 		if (newMode != toolMode && currentTool is SVGEditTool)

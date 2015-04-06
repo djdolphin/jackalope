@@ -24,6 +24,7 @@
 
 package {
 import blocks.*;
+import flash.net.FileFilter;
 
 import extensions.ExtensionManager;
 
@@ -59,7 +60,7 @@ import watchers.ListWatcher;
 
 public class Scratch extends Sprite {
 	// Version
-	public static const versionString:String = 'v432';
+	public static const versionString:String = 'v434';
 	public static var app:Scratch; // static reference to the app, used for debugging
 
 	// Display modes
@@ -71,6 +72,7 @@ public class Scratch extends Sprite {
 	public var render3D:IRenderIn3D;
 	public var isArmCPU:Boolean;
 	public var jsEnabled:Boolean = false; // true when the SWF can talk to the webpage
+	public var ignoreResize:Boolean = false; // If true, temporarily ignore resize events.
 
 	// Runtime
 	public var runtime:ScratchRuntime;
@@ -143,9 +145,9 @@ public class Scratch extends Sprite {
 
 		playerBG = new Shape(); // create, but don't add
 		addParts();
-		
+
 		server.getSelectedLang(Translator.setLanguageValue);
-		
+
 
 		stage.addEventListener(MouseEvent.MOUSE_DOWN, gh.mouseDown);
 		stage.addEventListener(MouseEvent.MOUSE_MOVE, gh.mouseMove);
@@ -597,7 +599,7 @@ public class Scratch extends Sprite {
 	protected function isShowing(obj:DisplayObject):Boolean { return obj.parent != null }
 
 	public function onResize(e:Event):void {
-		fixLayout();
+		if (!ignoreResize) fixLayout();
 	}
 
 	public function fixLayout():void {
@@ -1165,7 +1167,7 @@ public class Scratch extends Sprite {
 		return new MediaInfo(obj, owningObj);
 	}
 
-	static public function loadSingleFile(fileLoaded:Function, filters:Array = null):void {
+	static public function loadSingleFile(fileLoaded:Function, filter:FileFilter = null):void {
 		function fileSelected(event:Event):void {
 			if (fileList.fileList.length > 0) {
 				var file:FileReference = FileReference(fileList.fileList[0]);
@@ -1178,7 +1180,7 @@ public class Scratch extends Sprite {
 		fileList.addEventListener(Event.SELECT, fileSelected);
 		try {
 			// Ignore the exception that happens when you call browse() with the file browser open
-			fileList.browse(filters);
+			fileList.browse(filter != null ? [filter] : null);
 		} catch(e:*) {}
 	}
 

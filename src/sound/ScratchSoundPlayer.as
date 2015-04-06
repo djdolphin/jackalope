@@ -110,7 +110,7 @@ public class ScratchSoundPlayer {
 		} else {
 			// User has no sound card or too many sounds already playing.
 			stopPlaying();
-			doneFunction();
+			if (doneFunction != null) doneFunction();
 		}
 	}
 

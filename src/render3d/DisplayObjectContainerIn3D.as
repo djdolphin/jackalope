@@ -220,6 +220,7 @@ public class DisplayObjectContainerIn3D extends Sprite implements IRenderIn3D {S
 			}
 		}
 		uiContainer.transform.matrix = scratchStage.transform.matrix.clone();
+		uiContainer.scrollRect = scratchStage.scrollRect;
 		scratchStage.stage.addEventListener(Event.RESIZE, onStageResize, false, 0, true);
 //			scratchStage.stage.addEventListener(KeyboardEvent.KEY_DOWN, toggleTextureDebug, false, 0, true);
 		scratchStage.addEventListener(Event.ENTER_FRAME, onRender, false, 0, true);
@@ -356,7 +357,7 @@ public class DisplayObjectContainerIn3D extends Sprite implements IRenderIn3D {S
 	private function checkBuffers():void {
 		var resized:Boolean = false;
 		var numChildren:uint = scratchStage.numChildren;
-		var vertexDataMinSize:int = numChildren * 4 * shaderConfig.vertexSizeBytes; // 4 verts per child
+		var vertexDataMinSize:int = numChildren * 4 * shaderConfig.vertexSizeBytes * 2; // 4 verts per child
 		if (vertexDataMinSize > vertexData.length) {
 			// Increase and fill in the index buffer
 			var index:uint = indexData.length;
@@ -397,6 +398,7 @@ public class DisplayObjectContainerIn3D extends Sprite implements IRenderIn3D {S
 			}
 
 			if (vertexBuffer == null) {
+				//trace('creating vertexBuffer when indexData length = '+indexData.length);
 				vertexBuffer = __context.createVertexBuffer((indexData.length / 12) * 4, shaderConfig.vertexComponents);
 				vertexBufferUploaded = false;
 			}
@@ -421,15 +423,9 @@ public class DisplayObjectContainerIn3D extends Sprite implements IRenderIn3D {S
 			if (!!oldEffectRefs[effectName] != !!effectRefs[effectName]) effectsChanged = true;
 			oldEffectRefs[effectName] = effectRefs[effectName];
 		});
-		if (effectsChanged) {
-			switchShaders();
 
-			// Throw away the old vertex buffer: it might have the wrong number of streams activated
-			if (vertexBuffer != null) {
-				vertexBuffer.dispose();
-				vertexBuffer = null;
-			}
-		}
+		if (effectsChanged)
+			switchShaders();
 
 		checkBuffers();
 
@@ -467,7 +463,13 @@ public class DisplayObjectContainerIn3D extends Sprite implements IRenderIn3D {S
 				drawChild(dispObj);
 				++childrenDrawn;
 			}
+			//trace('drew '+childrenDrawn+' children (vertexData.length = '+vertexData.length+')');
 		}
+//		trace('quadCount = '+childrenDrawn);
+//		trace('numChildren = '+scratchStage.numChildren);
+//		trace('vertexComponents = '+shaderConfig.vertexComponents);
+//		trace('vertexData.length = '+vertexData.length);
+//		trace('indexData.length = '+indexData.length);
 
 		movedChildren = new Dictionary();
 		unrenderedChildren = new Dictionary();
@@ -475,9 +477,12 @@ public class DisplayObjectContainerIn3D extends Sprite implements IRenderIn3D {S
 
 	private function uploadBuffers():void {
 		if (!indexBufferUploaded) {
+//			trace('uploading indexBuffer when indexData length = '+indexData.length);
 			indexBuffer.uploadFromByteArray(indexData, 0, 0, indexData.length >> 1);
 			indexBufferUploaded = true;
 		}
+//		trace('uploading vertexBuffer when indexData length = '+indexData.length);
+//		trace('uploadFromByteArray(vertexData, 0, 0, '+((indexData.length / 12) * 4)+')');
 		vertexBuffer.uploadFromByteArray(vertexData, 0, 0, (indexData.length / 12) * 4);
 		vertexBufferUploaded = true;
 	}
@@ -499,7 +504,6 @@ public class DisplayObjectContainerIn3D extends Sprite implements IRenderIn3D {S
 		var bmID:String = spriteBitmaps[dispObj];
 		var renderOpts:Object = spriteRenderOpts[dispObj];
 		var roundLoc:Boolean = (rot % 90 == 0 && dispObj.scaleX == 1.0 && dispObj.scaleY == 1.0);
-//			var forcePixelate:Boolean = pixelateAll || (renderOpts && renderOpts.bitmap && rot % 90 == 0);
 
 		var boundsX:Number = bounds.left, boundsY:Number = bounds.top;
 		var childRender:ChildRender = bitmapsByID[bmID] as ChildRender;
@@ -1140,6 +1144,8 @@ public class DisplayObjectContainerIn3D extends Sprite implements IRenderIn3D {S
 		__context.setScissorRectangle(new Rectangle(0, 0, bmd.width + 1, bmd.height + 1));
 		render(1, false);
 		__context.drawToBitmapData(bmd);
+		// TODO: Fix bright edges of renders
+//		trace('Edge pixel: 0x'+bmd.getPixel32(bmd.width - 1, bmd.height - 1).toString(16).toUpperCase());
 
 		if (changeBackBuffer) {
 			scissorRect = null;
@@ -1283,7 +1289,7 @@ public class DisplayObjectContainerIn3D extends Sprite implements IRenderIn3D {S
 		if (blend)
 			__context.setBlendFactors(Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ONE_MINUS_SOURCE_ALPHA);
 		else
-			__context.setBlendFactors(Context3DBlendFactor.SOURCE_ALPHA, Context3DBlendFactor.ZERO);
+			__context.setBlendFactors(Context3DBlendFactor.ONE, Context3DBlendFactor.ZERO);
 
 		uploadBuffers();
 
@@ -1401,6 +1407,12 @@ public class DisplayObjectContainerIn3D extends Sprite implements IRenderIn3D {S
 				vertexSizeBytes: 4 * vertexComponents,
 				effectActive: effectActive
 			};
+		}
+
+		// Throw away the old vertex buffer: it probably has the wong data size per vertex
+		if (vertexBuffer != null) {
+			vertexBuffer.dispose();
+			vertexBuffer = null;
 		}
 	}
 
