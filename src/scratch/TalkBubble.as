@@ -65,7 +65,7 @@ public class TalkBubble extends Sprite {
 		pointsLeft = true;
 		shape = new Shape();
 		addChild(shape);
-		if (c is DisplayObject && !(c is Boolean)) {
+		if (c is DisplayObject) {
 			contents = c;
 			contents.x = padding;
 			contents.y = padding;
@@ -74,7 +74,7 @@ public class TalkBubble extends Sprite {
 		} else {
 			contents = makeText();
 			addChild(contents);
-			setText(String(c));
+			setText(String(c) || ' ');
 		}
 	}
 
