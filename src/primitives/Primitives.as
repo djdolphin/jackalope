@@ -67,6 +67,7 @@ public class Primitives {
 		primTable["letter:of:"]			= primLetterOf;
 		primTable["lettersOf"]			= primLettersOf;
 		primTable["stringLength:"]		= function(b:*):* { return String(interp.arg(b, 0)).length };
+		primTable["splitString:"]		= function(b:*):* { return String(interp.arg(b, 0)).split(interp.arg(b, 1)) };
 		primTable["stringContains"]		= primStringContains
 		primTable["stringIndexOf"]		= primStringIndexOf;
 		primTable["stringReplace"]		= primStringReplace;

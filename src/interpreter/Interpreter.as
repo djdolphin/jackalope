@@ -446,6 +446,7 @@ public class Interpreter {
 		primTable["whenIReceive"]		= primNoop;
 		primTable["doForeverIf"]		= function(b:*):* { if (arg(b, 0)) startCmdList(b.subStack1, true); else yield = true; };
 		primTable["doForLoop"]			= primForLoop;
+		primTable["doForEachLoop"]			= primForEachLoop;
 		primTable["doIf"]				= function(b:*):* { if (arg(b, 0)) startCmdList(b.subStack1); };
 		primTable["doIfElse"]			= function(b:*):* { if (arg(b, 0)) startCmdList(b.subStack1); else startCmdList(b.subStack2); };
 		primTable["doWaitUntil"]		= function(b:*):* { if (!arg(b, 0)) yield = true; };
@@ -499,6 +500,45 @@ public class Interpreter {
 	public function primNoop(b:Block):void { }
 
 	private function primForLoop(b:Block):void {
+		var list:Array = [];
+		var loopVar:Variable;
+
+		if (activeThread.firstTime) {
+			if (!(arg(b, 0) is String)) return;
+			var listArg:* = arg(b, 1);
+			if (listArg is Array) {
+				list = listArg as Array;
+			}
+			if (listArg is String) {
+				var n:Number = Number(listArg);
+				if (!isNaN(n)) listArg = n;
+			}
+			if ((listArg is Number) && !isNaN(listArg)) {
+				var last:int = int(listArg);
+				if (last >= 1) {
+					list = new Array(last - 1);
+					for (var i:int = 0; i < last; i++) list[i] = i + 1;
+				}
+			}
+			loopVar = activeThread.target.lookupOrCreateVar(arg(b, 0));
+			activeThread.args = [list, loopVar];
+			activeThread.tmp = 0;
+			activeThread.firstTime = false;
+		}
+
+		list = activeThread.args[0];
+		loopVar = activeThread.args[1];
+		if (activeThread.tmp < list.length) {
+			loopVar.value = list[activeThread.tmp++];
+			startCmdList(b.subStack1, true);
+		} else {
+			activeThread.args = null;
+			activeThread.tmp = 0;
+			activeThread.firstTime = true;
+		}
+	}
+	
+	private function primForEachLoop(b:Block):void {
 		var list:Array = [];
 		var loopVar:Variable;
 

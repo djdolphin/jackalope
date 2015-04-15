@@ -130,6 +130,11 @@ public class Block extends Sprite {
 			isReporter = true;
 			indentLeft = 9;
 			indentRight = 7;
+		} else if (type == "i") {
+			base = new BlockShape(BlockShape.OctagonShape, color);
+			isReporter = true;
+			indentLeft = 9;
+			indentRight = 7;
 		} else if (type == "r" || type == "R" || type == "rR") {
 			this.type = 'r';
 			base = new BlockShape(BlockShape.NumberShape, color);
@@ -489,6 +494,7 @@ public class Block extends Sprite {
 		if (item is Block) itemType = Block(item).type;
 		if (item is BlockArg) itemType = BlockArg(item).type;
 		if ((type == 'b') && (itemType == 'b')) return 4;
+		if ((type == 'i') && (itemType == 'i')) return 4;
 		if ((type == 'r') && ((itemType == 'r') || (itemType == 'd') || (itemType == 'n'))) return 2;
 		return 0;
 	}
@@ -768,6 +774,7 @@ public class Block extends Sprite {
 		if (s.length >= 2 && s.charAt(0) == "%") { // argument spec
 			var argSpec:String = s.charAt(1);
 			if (argSpec == "b") return new BlockArg("b", c);
+			if (argSpec == "i") return new BlockArg("i", c);
 			if (argSpec == "B") return new BlockCheckbox();
 			if (argSpec == "c") return new BlockArg("c", c);
 			if (argSpec == "d") return new BlockArg("d", c, true, s.slice(3));
@@ -998,7 +1005,7 @@ public class Block extends Sprite {
 	}
 
 	public function getSummary():String {
-		var s:String = type == "r" ? "(" : type == "b" ? "<" : "";
+		var s:String = type == "r" ? "(" : type == "b" || type == "i" ? "<" : "";
 		var space:Boolean = false;
 		for each (var x:DisplayObject in labelsAndArgs) {
 			if (space) {
@@ -1030,7 +1037,7 @@ public class Block extends Sprite {
 		if (nextBlock) {
 			s += "\n" + nextBlock.getSummary();
 		}
-		s += type == "r" ? ")" : type == "b" ? ">" : "";
+		s += type == "r" ? ")" : type == "b" || type == "i" ? ">" : "";
 		return s;
 	}
 
