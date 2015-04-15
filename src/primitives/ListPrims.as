@@ -51,6 +51,7 @@ public class ListPrims {
 		primTable['listIndexOf']		= primListIndexOf;
 		primTable['makeList']			= primListCreate;
 		primTable['deleteList']			= primListDelete;
+		primTable["arrayList:"]		= primContentArray;
 	}
 
 	private function primContents(b:Block):String {
@@ -64,6 +65,19 @@ public class ListPrims {
 			}
 		}
 		return (list.contents.join(allSingleLetters ? '' : ' '));
+	}
+	
+	private function primContentArray(b:Block):Array {
+		var list:ListWatcher = listarg(b, 0);
+		if (!list) return [];
+		var allSingleLetters:Boolean = true;
+		for each (var el:* in list.contents) {
+			if (!((el is String) && (el.length == 1))) {
+				allSingleLetters = false;
+				break;
+			}
+		}
+		return (list.contents);
 	}
 
 	private function primAppend(b:Block):void {

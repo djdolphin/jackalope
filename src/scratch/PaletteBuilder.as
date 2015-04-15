@@ -106,6 +106,7 @@ public class PaletteBuilder {
 		app.palette.addChild(o);
 		app.palette.updateSize();
 		nextY += o.height + 5;
+		
 	}
 
 	private function makeLabel(label:String):TextField {
@@ -129,6 +130,7 @@ public class PaletteBuilder {
 				var b:Block = new Block(proc.spec, ' ', Specs.procedureColor, Specs.CALL, proc.defaultArgValues);
 				addItem(b);
 			}
+			addBlocksForCategory(Specs.myBlocksCategory, catColor);
 			nextY += 5;
 		}
 

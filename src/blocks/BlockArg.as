@@ -36,12 +36,18 @@
 // arguments, it should set base to a BlockShape to support drag feedback.
 
 package blocks {
+	import blocks.*;
+	import extensions.*;
 	import flash.display.*;
 	import flash.events.*;
+	import flash.events.Event;
+	import flash.events.MouseEvent;
 	import flash.filters.BevelFilter;
+	import flash.net.*;
 	import flash.text.*;
 	import scratch.BlockMenus;
 	import translation.Translator;
+	import uiwidgets.*;
 	import util.Color;
 
 public class BlockArg extends Sprite {
@@ -99,13 +105,14 @@ public class BlockArg extends Sprite {
 			argValue = 0;
 		} else if (type == 's') {
 			base = new BlockShape(BlockShape.RectShape, c);
+		} else if (type == 'i') {
+			base = new BlockShape(BlockShape.OctagonShape, c);
 		} else {
 			// custom type; subclass is responsible for adding
 			// the desired children, setting width and height,
 			// and optionally defining the base shape
 			return;
 		}
-
 		if (type == 'c') {
 			base.setWidthAndTopHeight(13, 13);
 			setArgValue(Color.random());
@@ -207,6 +214,7 @@ public class BlockArg extends Sprite {
 
 	private function argTextInsets(type:String = ''):Array {
 		if (type == 'b') return [5, 0];
+		if (type == 'i') return [5, 0];
 		return numberType ? [3, 0] : [2, -1];
 	}
 
@@ -227,6 +235,7 @@ public class BlockArg extends Sprite {
 		// fix layout:
 		var padding:int = (type == 'n') ? 3 : 0;
 		if (type == 'b') padding = 8;
+		if (type == 'i') padding = 8;
 		if (menuIcon != null) padding = (type == 'd') ? 10 : 13;
 		var w:int = Math.max(14, field.textWidth + 6 + padding);
 		if (menuIcon) menuIcon.x = w - menuIcon.width - 3;

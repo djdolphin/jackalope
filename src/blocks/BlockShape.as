@@ -37,6 +37,7 @@ public class BlockShape extends Shape {
 	public static const CmdOutlineShape:int = 6;
 	public static const HatShape:int = 7;
 	public static const ProcHatShape:int = 8;
+	public static const OctagonShape:int = 12;
 	// C-shaped blocks
 	public static const LoopShape:int = 9;
 	public static const FinalLoopShape:int = 10;
@@ -60,6 +61,7 @@ public class BlockShape extends Shape {
 	// Variables
 	public var color:uint;
 	public var hasLoopArrow:Boolean;
+	public var checked:Boolean;
 
 	protected var shape:int;
 	private var w:int;
@@ -192,6 +194,7 @@ public class BlockShape extends Shape {
 		case IfElseShape:		drawFunction = drawIfElseShape; break;
 		case HatShape:			drawFunction = drawHatShape; break;
 		case ProcHatShape:		drawFunction = drawProcHatShape; break;
+		case OctagonShape:		drawFunction = drawOctagonShape; break;
 		}
 	}
 
@@ -205,6 +208,18 @@ public class BlockShape extends Shape {
 		g.lineTo(w - centerY, 0);
 		g.lineTo(w, centerY);
 		g.lineTo(w - centerY, topH);
+	}
+	
+	private function drawOctagonShape(g:Graphics):void {
+		var third:int = topH / 3;
+		g.moveTo(third, topH);
+		g.lineTo(0, topH-third);
+		g.lineTo(0, third);
+		g.lineTo(third, 0);
+		g.lineTo(w - third, 0);
+		g.lineTo(w, third);
+		g.lineTo(w, topH-third);
+		g.lineTo(w - third, topH);
 	}
 
 	private function drawNumberShape(g:Graphics):void {

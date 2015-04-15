@@ -131,6 +131,7 @@ public class ProcedureSpecEditor extends Sprite {
 			'Add menu input:',
 			'Add number menu input:',
 			'Add color input:',
+			'Add array input:',
 			'Add label text:',
 			'text',
 			'Add icon:'
@@ -169,6 +170,7 @@ public class ProcedureSpecEditor extends Sprite {
 				if (argSpec == 'm') arg = makeMenuArg(s.slice(3));
 				if (argSpec == 'd') arg = makeNumberMenuArg(s.slice(3));
 				if (argSpec == 'c') arg = makeColorArg();
+				if (argSpec == 'i') arg = makeIterableArg();
 				if (arg) {
 					arg.setArgValue(inputNames[i++]);
 					addElement(arg);
@@ -211,6 +213,7 @@ public class ProcedureSpecEditor extends Sprite {
 				var arg:BlockArg = BlockArg(el);
 				var v:* = 0;
 				if (arg.type == 'b') v = false;
+				if (arg.type == 'i') v = [];
 				if ((arg.type == 'n') || (arg.type == 'd')) v = 1;
 				if ((arg.type == 's') || (arg.type == 'm')) v = '';
 				if (arg.type == 'c') v = Color.random();
@@ -241,6 +244,7 @@ public class ProcedureSpecEditor extends Sprite {
 			makeLabel('Add menu input:', 14),
 			makeLabel('Add number menu input:', 14),
 			makeLabel('Add color input:', 14),
+			makeLabel('Add array input:', 14),
 			makeLabel('Add label text:', 14),
 			makeLabel('Add icon:', 14)
 		];
@@ -250,7 +254,8 @@ public class ProcedureSpecEditor extends Sprite {
 			new Button('', function():void { appendObj(makeBooleanArg()) }),
 			new Button('', function():void { chooseMenuType(makeMenuArg) }),
 			new Button('', function():void { chooseMenuType(makeNumberMenuArg) }),
-			new Button('', function():void { appendObj(makeColorArg()) }),
+			new Button('', function():void { appendObj(makeColorArg()) } ),
+			new Button('', function():void { appendObj(makeIterableArg()) }),
 			new Button('text', function():void { appendObj(makeTextField('')) }),
 			new Button('', chooseIcon)
 		];
@@ -281,8 +286,12 @@ public class ProcedureSpecEditor extends Sprite {
 		icon.setWidthAndTopHeight(13, 13, true);
 		buttons[5].setIcon(icon);
 		
+		icon = new BlockShape(BlockShape.OctagonShape, lightGray);
+		icon.setWidthAndTopHeight(13, 13, true);
+		buttons[6].setIcon(icon);
+		
 		icon = Specs.IconNamed('greenFlag');
-		buttons[7].setIcon(icon);
+		buttons[8].setIcon(icon);
 
 		for each (var label:TextField in buttonLabels) addChild(label);
 		for each (var b:Button in buttons) addChild(b);
@@ -382,6 +391,12 @@ public class ProcedureSpecEditor extends Sprite {
 	private function makeColorArg():BlockArg {
 		var result:BlockArg = new BlockArg('c', 0xFFFFFF, true, '', true);
 		result.setArgValue(unusedArgName('color'));
+		return result;
+	}
+	
+	private function makeIterableArg():BlockArg {
+		var result:BlockArg = new BlockArg('i', 0xFFFFFF, true, '', true);
+		result.setArgValue(unusedArgName('array'));
 		return result;
 	}
 	
